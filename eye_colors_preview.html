@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Boss Eye Color Preview</title>
+<style>
+body{background:#05050f;display:flex;flex-wrap:wrap;gap:20px;padding:28px;font-family:monospace;align-items:flex-start}
+.swatch{display:flex;flex-direction:column;align-items:center;gap:10px}
+canvas{border-radius:10px;border:1px solid rgba(255,255,255,0.12);image-rendering:pixelated}
+label{color:#ccc;font-size:13px;text-align:center;white-space:pre}
+</style>
+</head>
+<body>
+<script>
+const colors=[
+  {name:'Violet',         ic:'#6622ff'},
+  {name:'Purple',         ic:'#9933dd'},
+  {name:'Lavender',       ic:'#bb88ff'},
+  {name:'Magenta',        ic:'#cc00cc'},
+  {name:'Deep Purple',    ic:'#440088'},
+  {name:'Orchid',         ic:'#da70d6'},
+  {name:'Plum',           ic:'#8b008b'},
+  {name:'Amethyst',       ic:'#9966cc'},
+  {name:'Indigo',         ic:'#4b0082'},
+  {name:'Mauve',          ic:'#e0b0ff'},
+  {name:'Grape',          ic:'#6f2da8'},
+  {name:'Hot Purple',     ic:'#cc22ff'},
+];
+
+const SC=2.2;
+
+function drawFace(canvas, ic){
+  const W=Math.round(140*SC), H=Math.round(120*SC);
+  canvas.width=W; canvas.height=H;
+  canvas.style.width=(W/SC*1.6)+'px';
+  canvas.style.height=(H/SC*1.6)+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(SC,SC);
+  const bx=70, by=62;
+
+  // Stem
+  const sW=46,sH=36,sX=bx-sW/2,sY=by+10;
+  const stemG=ctx.createLinearGradient(sX,0,sX+sW,0);
+  stemG.addColorStop(0,'#b0906a'); stemG.addColorStop(0.3,'#eeddb5');
+  stemG.addColorStop(0.7,'#e8d4a8'); stemG.addColorStop(1,'#b0906a');
+  ctx.fillStyle=stemG;
+  ctx.beginPath();
+  ctx.moveTo(sX+6,sY); ctx.lineTo(sX+sW-6,sY);
+  ctx.arcTo(sX+sW,sY,sX+sW,sY+6,6); ctx.lineTo(sX+sW,sY+sH-6);
+  ctx.arcTo(sX+sW,sY+sH,sX+sW-6,sY+sH,6); ctx.lineTo(sX+6,sY+sH);
+  ctx.arcTo(sX,sY+sH,sX,sY+sH-6,6); ctx.lineTo(sX,sY+6);
+  ctx.arcTo(sX,sY,sX+6,sY,6); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='rgba(120,90,50,0.28)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(bx-10,sY+6); ctx.lineTo(bx-10,sY+sH-6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bx+10,sY+6); ctx.lineTo(bx+10,sY+sH-6); ctx.stroke();
+
+  // Cap
+  const capCY=by-14;
+  ctx.shadowColor='#dd2200'; ctx.shadowBlur=18;
+  const capG=ctx.createRadialGradient(bx-18,by-40,2,bx,capCY,66);
+  capG.addColorStop(0,'#ff5522');
+  capG.addColorStop(0.4,'#cc1a00');
+  capG.addColorStop(0.78,'#780900');
+  capG.addColorStop(1,'#2e0400');
+  ctx.fillStyle=capG;
+  ctx.beginPath();
+  ctx.moveTo(bx-60,by+2);
+  ctx.bezierCurveTo(bx-64,by-4,bx-57,by-17,bx-50,by-27);
+  ctx.bezierCurveTo(bx-36,by-63,bx+36,by-63,bx+50,by-27);
+  ctx.bezierCurveTo(bx+57,by-17,bx+64,by-4,bx+60,by+2);
+  ctx.bezierCurveTo(bx+46,by+14,bx-46,by+14,bx-60,by+2);
+  ctx.closePath(); ctx.fill();
+  ctx.shadowBlur=0;
+  // Specular
+  ctx.fillStyle='rgba(255,255,255,0.22)';
+  ctx.beginPath(); ctx.ellipse(bx-18,by-40,20,12,-0.5,0,Math.PI*2); ctx.fill();
+
+  // Hexagon spots
+  const drawHex=(cx,cy,r,rot)=>{ctx.beginPath();for(let i=0;i<6;i++){const a=rot+(i/6)*Math.PI*2-Math.PI/2;i===0?ctx.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r):ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}ctx.closePath();};
+  [[bx,by-45,10.5,0],[bx-25,by-27,7.5,Math.PI/6],[bx+25,by-27,7.5,-Math.PI/6],
+   [bx-45,by-10,5.5,Math.PI/4],[bx+45,by-10,5.5,-Math.PI/4]].forEach(([sx,sy,sr,rot])=>{
+    drawHex(sx,sy,sr,rot);
+    const hg=ctx.createRadialGradient(sx-sr*0.3,sy-sr*0.35,0,sx,sy,sr);
+    hg.addColorStop(0,'rgba(255,255,255,0.97)');
+    hg.addColorStop(0.6,'rgba(248,248,232,0.85)');
+    hg.addColorStop(1,'rgba(195,160,140,0.3)');
+    ctx.fillStyle=hg; ctx.fill();
+    ctx.strokeStyle='rgba(190,160,130,0.35)'; ctx.lineWidth=1; ctx.stroke();
+  });
+
+  // Eyebrows
+  const eyeY=by+2;
+  const browY=eyeY-13;
+  ctx.lineCap='round'; ctx.lineWidth=4.5;
+  ctx.strokeStyle='#2a1000'; ctx.shadowBlur=0;
+  ctx.beginPath(); ctx.moveTo(bx-25,browY+2); ctx.quadraticCurveTo(bx-15,browY-6,bx-7,browY+1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bx+7,browY+1); ctx.quadraticCurveTo(bx+15,browY-6,bx+25,browY+2); ctx.stroke();
+  ctx.lineCap='butt';
+
+  // Eyes
+  [[bx-14,1],[bx+14,1]].forEach(([ex,open])=>{
+    ctx.fillStyle='#060200';
+    ctx.beginPath(); ctx.ellipse(ex,eyeY,15,open*9+1,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#f8f3ea';
+    ctx.beginPath(); ctx.ellipse(ex,eyeY,13,open*7.5+1,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=ic; ctx.shadowColor=ic; ctx.shadowBlur=10;
+    ctx.beginPath(); ctx.ellipse(ex,eyeY,8.5,open*6,0,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#030100'; ctx.beginPath(); ctx.ellipse(ex,eyeY,5,open*4,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.beginPath(); ctx.ellipse(ex-4,eyeY-2.5,4,2,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.38)'; ctx.beginPath(); ctx.ellipse(ex+3,eyeY+2,1.8,1,0,0,Math.PI*2); ctx.fill();
+  });
+
+  // Blush
+  ctx.fillStyle='rgba(255,100,75,0.2)';
+  ctx.beginPath(); ctx.ellipse(bx-25,eyeY+5,9,5,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(bx+25,eyeY+5,9,5,0,0,Math.PI*2); ctx.fill();
+
+  // Mouth
+  const mouthY=eyeY+19;
+  ctx.fillStyle='#140400';
+  ctx.beginPath(); ctx.arc(bx,mouthY,13,0.12,Math.PI-0.12); ctx.fill();
+  ctx.fillStyle='#f0ece0';
+  ctx.beginPath(); ctx.arc(bx,mouthY,11,0.18,Math.PI-0.18); ctx.fill();
+  ctx.fillStyle='#cc2e18';
+  ctx.beginPath(); ctx.ellipse(bx,mouthY+5,7,4,0,0,Math.PI); ctx.fill();
+  ctx.strokeStyle='#1a0200'; ctx.lineWidth=2; ctx.lineCap='round';
+  ctx.beginPath(); ctx.arc(bx,mouthY,13,0.12,Math.PI-0.12); ctx.stroke();
+  ctx.lineCap='butt';
+}
+
+colors.forEach(c=>{
+  const div=document.createElement('div');
+  div.className='swatch';
+  const canvas=document.createElement('canvas');
+  const lbl=document.createElement('label');
+  lbl.textContent=c.name+'\n'+c.ic;
+  drawFace(canvas,c.ic);
+  div.appendChild(canvas);
+  div.appendChild(lbl);
+  document.body.appendChild(div);
+});
+</script>
+</body>
+</html>

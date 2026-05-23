@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="90" fill="#05050f"/>
+
+  <!-- Stem -->
+  <rect x="186" y="318" width="140" height="112" rx="18" fill="#eeddb5"/>
+  <rect x="216" y="328" width="8" height="92" rx="4" fill="rgba(120,90,50,0.25)"/>
+  <rect x="288" y="328" width="8" height="92" rx="4" fill="rgba(120,90,50,0.25)"/>
+
+  <!-- Cap glow -->
+  <ellipse cx="256" cy="220" rx="210" ry="155" fill="#cc1a00" opacity="0.35" filter="url(#glow)"/>
+  <!-- Cap -->
+  <path d="M 66 302 C 46 270 50 200 90 148 C 140 80 186 44 256 44 C 326 44 372 80 422 148 C 462 200 466 270 446 302 C 410 346 302 364 256 364 C 210 364 102 346 66 302 Z" fill="url(#capGrad)"/>
+
+  <defs>
+    <radialGradient id="capGrad" cx="38%" cy="28%" r="62%">
+      <stop offset="0%"   stop-color="#ff5522"/>
+      <stop offset="42%"  stop-color="#cc1a00"/>
+      <stop offset="78%"  stop-color="#780900"/>
+      <stop offset="100%" stop-color="#2e0400"/>
+    </radialGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+    </filter>
+  </defs>
+
+  <!-- Specular shine -->
+  <ellipse cx="196" cy="140" rx="68" ry="42" fill="rgba(255,255,255,0.18)" transform="rotate(-20,196,140)"/>
+
+  <!-- Hexagon spots -->
+  <!-- Center top -->
+  <polygon points="256,78 274,89 274,111 256,122 238,111 238,89" fill="rgba(255,255,255,0.94)" stroke="rgba(200,160,130,0.3)" stroke-width="2"/>
+  <!-- Left mid -->
+  <polygon points="162,162 176,170 176,188 162,196 148,188 148,170" fill="rgba(255,255,255,0.92)" stroke="rgba(200,160,130,0.3)" stroke-width="2"/>
+  <!-- Right mid -->
+  <polygon points="350,162 364,170 364,188 350,196 336,188 336,170" fill="rgba(255,255,255,0.92)" stroke="rgba(200,160,130,0.3)" stroke-width="2"/>
+  <!-- Left outer -->
+  <polygon points="104,238 114,244 114,256 104,262 94,256 94,244" fill="rgba(255,255,255,0.88)" stroke="rgba(200,160,130,0.3)" stroke-width="2"/>
+  <!-- Right outer -->
+  <polygon points="408,238 418,244 418,256 408,262 398,256 398,244" fill="rgba(255,255,255,0.88)" stroke="rgba(200,160,130,0.3)" stroke-width="2"/>
+
+</svg>
