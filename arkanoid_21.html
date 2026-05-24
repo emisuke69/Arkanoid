@@ -20,9 +20,14 @@ body{background:#05050f;display:flex;flex-direction:column;align-items:center;ju
 canvas{border-radius:10px;border:1px solid rgba(77,166,255,.2);
   box-shadow:0 0 30px rgba(77,166,255,.06);display:block;flex-shrink:0}
 #mobile-bar{
+  position:fixed;bottom:0;left:0;right:0;
   display:none;flex-shrink:0;
-  gap:10px;margin-top:8px;padding:0 8px;
-  width:100%;max-width:460px}
+  gap:10px;padding:8px 8px max(env(safe-area-inset-bottom,0px),8px);
+  width:100%;
+  background:rgba(5,5,15,0.92);
+  border-top:1px solid rgba(77,166,255,.18);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  z-index:20;}
 #mobile-bar button{
   flex:1;padding:14px 0;border:none;border-radius:10px;
   font:bold 14px 'Courier New',monospace;cursor:pointer;
@@ -56,8 +61,9 @@ const BASE_SPEED=7.5,SPD_INC=0.35,MAX_SPD=9.5,MAX_SPD_2=12.0,SLOW_MULT=0.55;
 const STEP=1000/60;
 
 // ── Responsive canvas ─────────────────────────────────────────
+const MB_H=72; // reserved px for fixed mobile bar
 function resize(){
-  const mbH=document.getElementById('mobile-bar').style.display==='flex'?66:0;
+  const mbH=document.getElementById('mobile-bar').style.display==='flex'?MB_H:0;
   const r=Math.min((innerWidth-8)/480,(innerHeight-8-mbH)/520);
   canvas.width=Math.floor(480*r); canvas.height=Math.floor(520*r);
   canvas.style.width=canvas.width+'px'; canvas.style.height=canvas.height+'px';
@@ -476,6 +482,7 @@ canvas.addEventListener('touchend',e=>{
 // Show mobile buttons + wire them up if touch is available
 if('ontouchstart' in window||navigator.maxTouchPoints>0){
   document.getElementById('mobile-bar').style.display='flex';
+  document.body.style.paddingBottom=MB_H+'px';
   resize();
   ['touchstart','mousedown'].forEach(ev=>{
     document.getElementById('btn-laser').addEventListener(ev,e=>{e.preventDefault();shootLaser();},{passive:false});
@@ -505,7 +512,7 @@ document.addEventListener('keydown',e=>{
 // ── Fixed-timestep tick ───────────────────────────────────────
 function tick(){
   const s=st;
-  if(s.phase!=='playing')return;
+  if(s.phase!=='playing'){s.coins=[];s.floaters=[];return;}
   const now=performance.now();
 
   // Expire effects

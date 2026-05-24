@@ -510,7 +510,7 @@ document.addEventListener('keydown',e=>{
 // ── Fixed-timestep tick ───────────────────────────────────────
 function tick(){
   const s=st;
-  if(s.phase!=='playing')return;
+  if(s.phase!=='playing'){s.coins=[];s.floaters=[];return;}
   const now=performance.now();
 
   // Expire effects
