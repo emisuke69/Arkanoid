@@ -37,11 +37,14 @@ canvas{border-radius:10px;border:1px solid rgba(77,166,255,.2);
 #btn-laser:active{background:rgba(191,90,242,.45)}
 #btn-hyper{background:rgba(255,159,10,.18);color:#ff9f0a;border:1px solid rgba(255,159,10,.5)}
 #btn-hyper:active{background:rgba(255,159,10,.45)}
-#btn-fs{position:fixed;top:max(8px,env(safe-area-inset-top,8px));right:8px;
+#btn-fs,#btn-pause{position:fixed;top:max(8px,env(safe-area-inset-top,8px));
   background:rgba(0,0,0,.55);color:rgba(255,255,255,.6);
   border:1px solid rgba(255,255,255,.15);border-radius:6px;
   padding:6px 9px;font-size:16px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;z-index:10;line-height:1}
+#btn-fs{right:8px}
+#btn-pause{right:50px}
+#btn-pause.paused{color:#ffd60a;border-color:rgba(255,214,10,.5);background:rgba(20,15,0,.7)}
 @media(hover:none)and(pointer:coarse){#mobile-bar{display:flex}}
 </style>
 </head>
@@ -51,6 +54,7 @@ canvas{border-radius:10px;border:1px solid rgba(77,166,255,.2);
   <button id="btn-laser">🔫 LASER</button>
   <button id="btn-hyper">🔥 HYPER</button>
 </div>
+<button id="btn-pause" title="Pause">⏸</button>
 <button id="btn-fs" title="Fullscreen">⛶</button>
 <script>
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
@@ -477,6 +481,7 @@ function launch(){
     st=initState(lv); st.paddle.x=px; st.score=sc;
   } else if(s.phase==='gameover'){
     st=initState();
+    paused=false;btnPause.textContent='⏸';btnPause.classList.remove('paused');
   } else if(s.phase==='playing'){
     s.balls.forEach(b=>{if(b.caught)b.caught=false;});
   }
@@ -496,8 +501,19 @@ function fireHyper(){
   s.hyperBeam={x:cx,timer:45}; // 45 frames of beam
   s.hyper=0; SFX.hyperBeam();
 }
+let paused=false;
+const btnPause=document.getElementById('btn-pause');
+function togglePause(){
+  if(st.phase!=='playing')return;
+  paused=!paused;
+  btnPause.textContent=paused?'▶':'⏸';
+  btnPause.classList.toggle('paused',paused);
+}
+btnPause.addEventListener('click',togglePause);
+
 let lastTap=0,tapCount=0;
 function canvasClick(cx,cy){
+  if(paused){togglePause();return;}
   if(st.phase==='shop'){handleShopClick(cx,cy);return;}
   if(st.phase==='idle'){
     if(cx>=SHOP_BTN.x&&cx<=SHOP_BTN.x+SHOP_BTN.w&&cy>=SHOP_BTN.y&&cy<=SHOP_BTN.y+SHOP_BTN.h){
@@ -559,8 +575,12 @@ document.addEventListener('fullscreenchange',()=>{
   resize();
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&st.phase==='shop'){st.phase='idle';return;}
-  if(e.key===' '){e.preventDefault();launch();}
+  if(e.key==='Escape'){
+    if(st.phase==='shop'){st.phase='idle';return;}
+    if(paused){togglePause();return;}
+  }
+  if(e.key==='p'||e.key==='P'){togglePause();return;}
+  if(e.key===' '){e.preventDefault();if(paused){togglePause();return;}launch();}
   if(e.key==='ArrowLeft') st.targetX=(st.paddle.x+st.paddle.w/2)-30;
   if(e.key==='ArrowRight')st.targetX=(st.paddle.x+st.paddle.w/2)+30;
   if(e.key==='z'||e.key==='Z') shootLaser();
@@ -570,6 +590,7 @@ document.addEventListener('keydown',e=>{
 // ── Fixed-timestep tick ───────────────────────────────────────
 function tick(){
   const s=st;
+  if(paused)return;
   if(s.phase!=='playing'){s.coins=[];s.floaters=[];return;}
   const now=performance.now();
 
@@ -1953,6 +1974,19 @@ function draw(){
     ctx.fillStyle='#ff2d55';ctx.font='bold 34px Courier New';ctx.fillText('GAME OVER',W/2,H/2-28);
     ctx.fillStyle='#fff';ctx.font='17px Courier New';ctx.fillText('Score: '+s.score,W/2,H/2+8);
     ctx.fillStyle='#4da6ff';ctx.font='13px Courier New';ctx.fillText('Tippen zum Neustart',W/2,H/2+42);
+  }
+
+  // ── Pause overlay ─────────────────────────────────────────
+  if(paused&&s.phase==='playing'){
+    ctx.fillStyle='rgba(0,0,0,0.72)';ctx.fillRect(0,0,W,H);
+    ctx.shadowColor='#ffd60a';ctx.shadowBlur=20;
+    ctx.fillStyle='#ffd60a';ctx.font='bold 36px Courier New';ctx.textAlign='center';
+    ctx.fillText('⏸ PAUSE',W/2,H/2-28);
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(255,255,255,0.55)';ctx.font='12px Courier New';
+    ctx.fillText(`LVL ${s.level}  ·  SCORE ${s.score}  ·  ${'❤️'.repeat(Math.max(s.lives,0))}`,W/2,H/2+10);
+    ctx.fillStyle='#888';ctx.font='12px Courier New';
+    ctx.fillText('P / SPACE / Tippen zum Weiterspielen',W/2,H/2+36);
   }
 
   // ── Skin Shop overlay ──────────────────────────────────────
