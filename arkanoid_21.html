@@ -420,6 +420,7 @@ function spawnBoss(){
 function initState(lv=1){
   return{paddle:{x:200,w:80},balls:[makeBall(lv)],bricks:makeBricks(lv),
     drops:[],coins:[],floaters:[],coinCount:0,deadCause:null,lasers:[],eLasers:[],particles:[],enemies:[],
+    skinParts:[],ballTrail:[],shadowTrail:[],
     enemyTimer:Math.max(180-lv*15,60),crawlerTimer:Math.max(300-lv*20,120),
     score:0,lives:3,level:lv,
     phase:'idle',targetX:240,fx:{},laserOn:false,wallBreak:false,wallBreakTimer:0,
@@ -591,7 +592,7 @@ document.addEventListener('keydown',e=>{
 function tick(){
   const s=st;
   if(paused)return;
-  if(s.phase!=='playing'){s.coins=[];s.floaters=[];return;}
+  if(s.phase!=='playing'){s.coins=[];s.floaters=[];s.skinParts=[];s.ballTrail=[];s.shadowTrail=[];return;}
   const now=performance.now();
 
   // Expire effects
@@ -936,6 +937,77 @@ function tick(){
   for(let i=s.floaters.length-1;i>=0;i--){
     const f=s.floaters[i]; f.y+=f.vy; f.life-=0.022;
     if(f.life<=0) s.floaters.splice(i,1);
+  }
+
+  // ── Skin effects ──────────────────────────────────────────────
+  // Ball trail (stores recent ball positions)
+  s.balls.forEach(b=>{
+    if(!b.caught&&s.ballTrail.length<14)
+      s.ballTrail.push({x:b.x,y:b.y,life:1});
+  });
+  for(let i=s.ballTrail.length-1;i>=0;i--){
+    s.ballTrail[i].life-=0.12;
+    if(s.ballTrail[i].life<=0) s.ballTrail.splice(i,1);
+  }
+  // Shadow skin: store paddle ghost positions
+  const _skId=_equipped;
+  if(_skId==='shadow'){
+    s.shadowTrail.push({x:s.paddle.x,w:PW,life:1});
+    if(s.shadowTrail.length>7) s.shadowTrail.shift();
+    for(const tr of s.shadowTrail) tr.life=Math.max(tr.life-0.04,0);
+  } else {
+    if(s.shadowTrail.length) s.shadowTrail=[];
+  }
+  // Spawn skin particles (cap at 45 total)
+  if(s.skinParts.length<45){
+    const px=s.paddle.x;
+    if(_skId==='fire'&&Math.random()<0.38){
+      const side=Math.random()<0.5;
+      s.skinParts.push({x:px+(side?Math.random()*14:PW-Math.random()*14),y:PY+PH*0.4,
+        vx:(Math.random()-0.5)*1.1,vy:-1.1-Math.random()*1.6,
+        life:1,decay:0.044,size:2+Math.random()*2.5,col:Math.random()<0.55?'#ff6600':'#ffaa00',type:'ember'});
+    }
+    if(_skId==='ice'&&Math.random()<0.2){
+      s.skinParts.push({x:px+8+Math.random()*(PW-16),y:PY,
+        vx:(Math.random()-0.5)*0.4,vy:-0.45-Math.random()*0.55,
+        life:1,decay:0.017,size:2+Math.random()*2,col:Math.random()<0.35?'#ffffff':'#aaeeff',type:'snow'});
+    }
+    if(_skId==='toxic'&&Math.random()<0.22){
+      s.skinParts.push({x:px+12+Math.random()*(PW-24),y:PY-1,
+        vx:(Math.random()-0.5)*0.35,vy:-0.55-Math.random()*0.5,
+        life:1,decay:0.019,size:2.5+Math.random()*2.5,col:Math.random()<0.5?'#22ff44':'#aaff22',type:'bubble',wobble:Math.random()*Math.PI*2});
+    }
+    if(_skId==='gold'&&Math.random()<0.28){
+      s.skinParts.push({x:px+Math.random()*PW,y:PY+Math.random()*PH,
+        vx:(Math.random()-0.5)*0.7,vy:-0.25-Math.random()*0.55,
+        life:1,decay:0.03,size:1+Math.random()*2,col:Math.random()<0.5?'#ffd60a':'#ffe566',type:'spark'});
+    }
+    if(_skId==='galaxy'&&Math.random()<0.3){
+      const gc=['#7b2ff7','#e040fb','#00ddff','#ffd60a','#ff5af2'];
+      s.skinParts.push({x:px+Math.random()*PW,y:PY+Math.random()*PH,
+        vx:(Math.random()-0.5)*0.9,vy:-0.5-Math.random()*0.9,
+        life:1,decay:0.024,size:1.5+Math.random()*2.5,col:gc[Math.floor(Math.random()*gc.length)],type:'star',rot:Math.random()*Math.PI*2});
+    }
+    if(_skId==='boss'&&Math.random()<0.3){
+      const side=Math.random()<0.5;
+      s.skinParts.push({x:px+(side?Math.random()*12:PW-Math.random()*12),y:PY+PH*0.4,
+        vx:(Math.random()-0.5)*1.4,vy:-0.9-Math.random()*1.3,
+        life:1,decay:0.04,size:2+Math.random()*3,col:Math.random()<0.6?'#ff2200':'#ff6600',type:'ember'});
+    }
+    if(_skId==='classic'&&Math.random()<0.1){
+      s.skinParts.push({x:px+Math.random()*PW,y:PY+Math.random()*PH,
+        vx:(Math.random()-0.5)*0.5,vy:-0.3-Math.random()*0.4,
+        life:1,decay:0.032,size:1.5+Math.random()*1.5,col:'#4da6ff',type:'spark'});
+    }
+  }
+  // Update skin particles
+  for(let i=s.skinParts.length-1;i>=0;i--){
+    const p=s.skinParts[i];
+    p.x+=p.vx; p.y+=p.vy; p.life-=p.decay;
+    if(p.type==='ember'){p.vy*=0.97;p.vx*=0.97;}
+    if(p.type==='bubble'&&p.wobble!==undefined) p.x+=Math.sin(p.wobble+=0.12)*0.35;
+    if(p.type==='star'&&p.rot!==undefined) p.rot+=0.07;
+    if(p.life<=0) s.skinParts.splice(i,1);
   }
 
   // Player lasers
@@ -1765,6 +1837,18 @@ function draw(){
     ctx.shadowBlur=0; ctx.restore();
   });
 
+  // ── Skin: shadow trail (drawn behind paddle) ──────────────────
+  if(_equipped==='shadow'&&s.shadowTrail.length>1){
+    s.shadowTrail.forEach((tr,idx)=>{
+      const frac=(idx+1)/s.shadowTrail.length;
+      ctx.globalAlpha=tr.life*frac*0.32;
+      ctx.fillStyle='#9977cc'; ctx.shadowColor='#8855bb'; ctx.shadowBlur=12;
+      ctx.beginPath(); ctx.roundRect(tr.x,PY,tr.w,PH,6); ctx.fill();
+      ctx.shadowBlur=0;
+    });
+    ctx.globalAlpha=1;
+  }
+
   // Paddle
   const isLa=s.fx.LASER&&s.fx.LASER>now,isWi=s.fx.WIDE&&s.fx.WIDE>now;
   const isTi=s.fx.TINY&&s.fx.TINY>now,isCa=s.fx.CATCH&&s.fx.CATCH>now;
@@ -1795,8 +1879,85 @@ function draw(){
   }
   ctx.shadowBlur=0;
 
+  // ── Skin aura effects (drawn over paddle) ────────────────────
+  const _noFx=!isStun&&!isLa&&!isWi&&!isTi&&!isCa;
+  // Gold: pulsing halo ring
+  if(_equipped==='gold'&&_noFx){
+    const hp=0.09+Math.sin(now*0.005)*0.05;
+    ctx.strokeStyle=`rgba(255,214,10,${hp})`; ctx.lineWidth=3;
+    ctx.shadowColor='#ffd60a'; ctx.shadowBlur=14;
+    ctx.beginPath(); ctx.roundRect(s.paddle.x-3,PY-3,PW+6,PH+6,9); ctx.stroke();
+    ctx.shadowBlur=0;
+  }
+  // Ice: frost shimmer on paddle edges
+  if(_equipped==='ice'&&_noFx){
+    const fp=0.14+Math.sin(now*0.003)*0.07;
+    const fg=ctx.createLinearGradient(s.paddle.x,PY,s.paddle.x+PW,PY);
+    fg.addColorStop(0,`rgba(200,240,255,${fp+0.1})`);
+    fg.addColorStop(0.5,'rgba(200,240,255,0)');
+    fg.addColorStop(1,`rgba(200,240,255,${fp+0.1})`);
+    ctx.fillStyle=fg;
+    ctx.beginPath(); ctx.roundRect(s.paddle.x,PY,PW,PH,6); ctx.fill();
+  }
+  // Boss: dark red screen-edge vignette
+  if(_equipped==='boss'){
+    const va=0.07+Math.sin(now*0.003)*0.03;
+    const vg=ctx.createRadialGradient(W/2,H/2,H*0.28,W/2,H/2,H*0.8);
+    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,`rgba(140,0,0,${va})`);
+    ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+  }
+  // ── Skin particles ──────────────────────────────────────────────
+  s.skinParts.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha=p.life;
+    ctx.shadowColor=p.col;
+    ctx.shadowBlur=p.type==='star'?14:p.type==='bubble'?5:8;
+    if(p.type==='bubble'){
+      ctx.strokeStyle=p.col; ctx.lineWidth=1.5;
+      ctx.fillStyle='rgba(34,255,68,0.07)';
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      ctx.fill(); ctx.stroke();
+    } else if(p.type==='snow'){
+      ctx.fillStyle=p.col;
+      ctx.save(); ctx.translate(p.x,p.y);
+      ctx.rotate(now*0.002+p.life*4);
+      ctx.beginPath();
+      ctx.moveTo(0,-p.size); ctx.lineTo(p.size*0.5,0);
+      ctx.lineTo(0,p.size); ctx.lineTo(-p.size*0.5,0);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    } else if(p.type==='star'){
+      ctx.fillStyle=p.col;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot||0);
+      ctx.beginPath();
+      for(let k=0;k<8;k++){
+        const a=k*Math.PI/4, r=k%2===0?p.size:p.size*0.38;
+        k===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    } else {
+      // spark / ember: glowing circle
+      ctx.fillStyle=p.col;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+    }
+    ctx.shadowBlur=0; ctx.restore();
+  });
+
   // Balls
   const isSl=s.fx.SLOW&&s.fx.SLOW>now;
+  // Ball trail
+  if(s.ballTrail.length){
+    const _sk3=SKINS[_equipped]||SKINS.classic;
+    const trCol=isLa?'#bf5af2':isCa?'#ff9f0a':isSl?'#30d158':_sk3.glow;
+    s.ballTrail.forEach(t=>{
+      ctx.globalAlpha=t.life*0.3;
+      ctx.fillStyle=trCol; ctx.shadowColor=trCol; ctx.shadowBlur=6;
+      ctx.beginPath(); ctx.arc(t.x,t.y,BR*0.62,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+    });
+    ctx.globalAlpha=1;
+  }
   s.balls.forEach(b=>{
     const bc=b.caught?['#fff','#ffd060','#ff9f0a']:isSl?['#fff','#6ee89a','#0a5a20']:['#fff','#a0d4ff','#0a84ff'];
     const bg2=ctx.createRadialGradient(b.x-2,b.y-2,1,b.x,b.y,BR);
@@ -1806,6 +1967,20 @@ function draw(){
     if(b.caught){ctx.strokeStyle='rgba(255,180,50,.5)';ctx.lineWidth=1.5;
       ctx.beginPath();ctx.arc(b.x,b.y,BR+4,0,Math.PI*2);ctx.stroke();}
   });
+  // Galaxy: orbiting dots around each ball
+  if(_equipped==='galaxy'&&s.balls.length){
+    const orbitCols=['#7b2ff7','#e040fb','#00ddff'];
+    const ot=now*0.004;
+    s.balls.forEach(b=>{
+      orbitCols.forEach((col,i)=>{
+        const angle=ot+i*(Math.PI*2/3);
+        const ox=Math.cos(angle)*(BR+5), oy=Math.sin(angle)*(BR+5);
+        ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=9;
+        ctx.beginPath(); ctx.arc(b.x+ox,b.y+oy,2.5,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0;
+      });
+    });
+  }
 
   // Hyper beam visual
   if(s.hyperBeam){
