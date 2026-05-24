@@ -375,7 +375,7 @@ function spawnBoss(){
 
 function initState(lv=1){
   return{paddle:{x:200,w:80},balls:[makeBall(lv)],bricks:makeBricks(lv),
-    drops:[],coins:[],floaters:[],coinCount:0,lasers:[],eLasers:[],particles:[],enemies:[],
+    drops:[],coins:[],floaters:[],coinCount:0,deadCause:null,lasers:[],eLasers:[],particles:[],enemies:[],
     enemyTimer:Math.max(180-lv*15,60),crawlerTimer:Math.max(300-lv*20,120),
     score:0,lives:3,level:lv,
     phase:'idle',targetX:240,fx:{},laserOn:false,wallBreak:false,wallBreakTimer:0,
@@ -417,6 +417,7 @@ function applyPU(type){
 function launch(){
   const s=st;
   if(s.phase==='idle'||s.phase==='dead'){
+    s.deadCause=null;
     let rel=false;
     s.balls.forEach(b=>{if(b.caught){b.caught=false;rel=true;}});
     if(!rel) s.balls=[makeBall(s.level,s.paddle.x+s.paddle.w/2,PY-BR-2)];
@@ -671,6 +672,7 @@ function tick(){
         spawnFX(el.x,PY,'#ff2d55',14);
         SFX.lostBall();
         s.lives--;
+        s.deadCause='boss';
         s.phase=s.lives<=0?'gameover':'dead';
         if(s.lives<=0) SFX.gameover();
         s.balls=[];s.drops=[];s.coins=[];s.floaters=[];s.lasers=[];s.eLasers=[];s.enemies=[];s.fx={};s.paddle.w=80;s.laserOn=false;s.stunTimer=0;
@@ -1826,9 +1828,36 @@ function draw(){
     ctx.fillText('Tippen / SPACE zum Starten',W/2,H-30);
   }
   if(s.phase==='dead'){
-    ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(0,H/2-48,W,96);
-    ctx.fillStyle='#ff2d55';ctx.font='bold 24px Courier New';ctx.fillText('BALL VERLOREN!',W/2,H/2-8);
-    ctx.fillStyle='#aaa';ctx.font='13px Courier New';ctx.fillText('Tippen zum Weiterspielen',W/2,H/2+26);
+    if(s.deadCause==='boss'){
+      // ── Boss-bullet death screen ──
+      const t=performance.now();
+      // Pulsing dark red overlay
+      const pulse=0.55+Math.sin(t*0.004)*0.1;
+      ctx.fillStyle=`rgba(60,0,0,${pulse})`;ctx.fillRect(0,0,W,H);
+      // Bullet icon flash
+      const iconPulse=Math.sin(t*0.008)*0.4+0.6;
+      ctx.font=`${Math.floor(36+iconPulse*6)}px Courier New`;
+      ctx.fillStyle=`rgba(255,80,0,${iconPulse})`;
+      ctx.fillText('💥',W/2,H/2-52);
+      // Title
+      ctx.shadowColor='#ff4400';ctx.shadowBlur=18;
+      ctx.fillStyle='#ff5522';ctx.font='bold 22px Courier New';
+      ctx.fillText('VON DOH ERSCHOSSEN!',W/2,H/2-12);
+      ctx.shadowBlur=0;
+      // Flavor line
+      ctx.fillStyle='#cc6644';ctx.font='12px Courier New';
+      ctx.fillText('Der Boss zeigt keine Gnade...',W/2,H/2+16);
+      // Continue prompt (blinking)
+      if(Math.floor(t/500)%2===0){
+        ctx.fillStyle='#ff9f0a';ctx.font='bold 13px Courier New';
+        ctx.fillText('Tippen zum Weiterspielen',W/2,H/2+44);
+      }
+    } else {
+      // ── Normal ball-lost screen ──
+      ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(0,H/2-48,W,96);
+      ctx.fillStyle='#ff2d55';ctx.font='bold 24px Courier New';ctx.fillText('BALL VERLOREN!',W/2,H/2-8);
+      ctx.fillStyle='#aaa';ctx.font='13px Courier New';ctx.fillText('Tippen zum Weiterspielen',W/2,H/2+26);
+    }
   }
   if(s.phase==='win_boss'){
     ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(0,0,W,H);
