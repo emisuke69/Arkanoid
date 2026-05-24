@@ -63,6 +63,7 @@ canvas{border-radius:10px;border:1px solid rgba(77,166,255,.2);
   <button class="devbtn warn" onclick="devGivePU('BREAK')">🚪 Break</button>
   <div class="section">CHEATS</div>
   <button class="devbtn" onclick="devFillHyper()">⚡ Fill Hyper</button>
+  <button class="devbtn" onclick="devUnlockAllSkins()">🎨 All Skins + 999🪙</button>
   <button class="devbtn" onclick="devGodMode()">🛡 God Mode</button>
   <button class="devbtn danger" onclick="devKillAll()">💀 Kill All Bricks</button>
   <button class="devbtn danger" onclick="devSpawnBoss()">👾 Spawn Boss Now</button>
@@ -2199,6 +2200,10 @@ function devJumpLevel(lv){
 }
 function devGivePU(type){ applyPU(type); devUpdateInfo(); }
 function devFillHyper(){ st.hyper=st.hyperMax; devUpdateInfo(); }
+function devUnlockAllSkins(){
+  _saveOwned(SKIN_IDS.slice());
+  _saveWallet(999);
+}
 let godMode=false;
 function devGodMode(){
   godMode=!godMode;
