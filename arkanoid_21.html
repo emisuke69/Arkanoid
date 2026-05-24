@@ -482,7 +482,7 @@ function launch(){
     st=initState(lv); st.paddle.x=px; st.score=sc;
   } else if(s.phase==='gameover'){
     st=initState();
-    paused=false;btnPause.textContent='⏸';btnPause.classList.remove('paused');
+    paused=false;btnPause.textContent='⏸';btnPause.classList.remove('paused'); // defensive: dev panel can force gameover outside tick()
   } else if(s.phase==='playing'){
     s.balls.forEach(b=>{if(b.caught)b.caught=false;});
   }
@@ -919,19 +919,21 @@ function tick(){
   }
 
   // Coins
+  let _walletDelta=0;
   for(let i=s.coins.length-1;i>=0;i--){
     const c=s.coins[i];
     c.y+=c.vy; c.spin+=0.14;
     if(c.y+8>PY&&c.y<PY+PH&&c.x+8>s.paddle.x&&c.x-8<s.paddle.x+PW){
       s.score+=c.value;
       s.coinCount++;
-      _saveWallet(_wallet+1);
+      _walletDelta++;
       const col=c.tier==='gold'?'#ffd60a':c.tier==='silver'?'#ddd':'#cd7f32';
       s.floaters.push({x:c.x,y:PY-12,vy:-1.1,life:1,text:`+${c.value}`,color:col});
       SFX.coin();
       s.coins.splice(i,1);
     } else if(c.y>H+16) s.coins.splice(i,1);
   }
+  if(_walletDelta) _saveWallet(_wallet+_walletDelta);
 
   // Score floaters
   for(let i=s.floaters.length-1;i>=0;i--){
@@ -940,10 +942,9 @@ function tick(){
   }
 
   // ── Skin effects ──────────────────────────────────────────────
-  // Ball trail (stores recent ball positions)
+  // Ball trail – no pool cap; life expiry handles cleanup (cap per-ball would starve with MULTI)
   s.balls.forEach(b=>{
-    if(!b.caught&&s.ballTrail.length<14)
-      s.ballTrail.push({x:b.x,y:b.y,life:1});
+    if(!b.caught) s.ballTrail.push({x:b.x,y:b.y,life:1});
   });
   for(let i=s.ballTrail.length-1;i>=0;i--){
     s.ballTrail[i].life-=0.12;
@@ -952,9 +953,8 @@ function tick(){
   // Shadow skin: store paddle ghost positions
   const _skId=_equipped;
   if(_skId==='shadow'){
-    s.shadowTrail.push({x:s.paddle.x,w:PW,life:1});
+    s.shadowTrail.push({x:s.paddle.x,w:PW});
     if(s.shadowTrail.length>7) s.shadowTrail.shift();
-    for(const tr of s.shadowTrail) tr.life=Math.max(tr.life-0.04,0);
   } else {
     if(s.shadowTrail.length) s.shadowTrail=[];
   }
@@ -1005,8 +1005,8 @@ function tick(){
     const p=s.skinParts[i];
     p.x+=p.vx; p.y+=p.vy; p.life-=p.decay;
     if(p.type==='ember'){p.vy*=0.97;p.vx*=0.97;}
-    if(p.type==='bubble'&&p.wobble!==undefined) p.x+=Math.sin(p.wobble+=0.12)*0.35;
-    if(p.type==='star'&&p.rot!==undefined) p.rot+=0.07;
+    if(p.type==='bubble') p.x+=Math.sin(p.wobble+=0.12)*0.35;
+    if(p.type==='star') p.rot+=0.07;
     if(p.life<=0) s.skinParts.splice(i,1);
   }
 
@@ -1840,8 +1840,7 @@ function draw(){
   // ── Skin: shadow trail (drawn behind paddle) ──────────────────
   if(_equipped==='shadow'&&s.shadowTrail.length>1){
     s.shadowTrail.forEach((tr,idx)=>{
-      const frac=(idx+1)/s.shadowTrail.length;
-      ctx.globalAlpha=tr.life*frac*0.32;
+      ctx.globalAlpha=((idx+1)/s.shadowTrail.length)*0.32;
       ctx.fillStyle='#9977cc'; ctx.shadowColor='#8855bb'; ctx.shadowBlur=12;
       ctx.beginPath(); ctx.roundRect(tr.x,PY,tr.w,PH,6); ctx.fill();
       ctx.shadowBlur=0;
@@ -1948,8 +1947,7 @@ function draw(){
   const isSl=s.fx.SLOW&&s.fx.SLOW>now;
   // Ball trail
   if(s.ballTrail.length){
-    const _sk3=SKINS[_equipped]||SKINS.classic;
-    const trCol=isLa?'#bf5af2':isCa?'#ff9f0a':isSl?'#30d158':_sk3.glow;
+    const trCol=isLa?'#bf5af2':isCa?'#ff9f0a':isSl?'#30d158':_sc.glow;
     s.ballTrail.forEach(t=>{
       ctx.globalAlpha=t.life*0.3;
       ctx.fillStyle=trCol; ctx.shadowColor=trCol; ctx.shadowBlur=6;
