@@ -369,7 +369,7 @@ function spawnBoss(){
 
 function initState(lv=1){
   return{paddle:{x:200,w:80},balls:[makeBall(lv)],bricks:makeBricks(lv),
-    drops:[],coins:[],floaters:[],lasers:[],eLasers:[],particles:[],enemies:[],
+    drops:[],coins:[],floaters:[],coinCount:0,lasers:[],eLasers:[],particles:[],enemies:[],
     enemyTimer:Math.max(180-lv*15,60),crawlerTimer:Math.max(300-lv*20,120),
     score:0,lives:3,level:lv,
     phase:'idle',targetX:240,fx:{},laserOn:false,wallBreak:false,wallBreakTimer:0,
@@ -836,6 +836,7 @@ function tick(){
     c.y+=c.vy; c.spin+=0.14;
     if(c.y+8>PY&&c.y<PY+PH&&c.x+8>s.paddle.x&&c.x-8<s.paddle.x+PW){
       s.score+=c.value;
+      s.coinCount++;
       const col=c.tier==='gold'?'#ffd60a':c.tier==='silver'?'#ddd':'#cd7f32';
       s.floaters.push({x:c.x,y:PY-12,vy:-1.1,life:1,text:`+${c.value}`,color:col});
       SFX.coin();
@@ -1788,6 +1789,13 @@ function draw(){
   ctx.font='11px Courier New';
   ctx.fillStyle='#4da6ff';ctx.textAlign='left';ctx.fillText(`LVL ${s.level}`,6,H-7);
   ctx.fillStyle='#ffd60a';ctx.textAlign='center';ctx.fillText(`SCORE ${s.score}`,W/2,H-7);
+  // Coin counter
+  ctx.textAlign='left';
+  const coinPulse=s.coinCount>0&&Math.floor(performance.now()/400)%2===0;
+  ctx.fillStyle=coinPulse?'#ffe566':'#ffd60a';
+  ctx.shadowColor='#ffd60a';ctx.shadowBlur=s.coinCount>0?6:0;
+  ctx.fillText(`🪙${s.coinCount}`,W*0.72,H-7);
+  ctx.shadowBlur=0;
   ctx.fillStyle='#ff2d55';ctx.textAlign='right';
   ctx.fillText('❤️'.repeat(Math.max(s.lives,0)),W-6,H-7);
 
