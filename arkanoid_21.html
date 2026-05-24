@@ -88,6 +88,46 @@ const PU={
 };
 const PU_KEYS=Object.keys(PU);
 
+// ── Skin shop ─────────────────────────────────────────────────
+const SKINS={
+  classic: {name:'CLASSIC',  price:0,  col:['#4da6ff','#a0d4ff','#4da6ff'], glow:'#4da6ff'},
+  fire:    {name:'FIRE',     price:8,  col:['#ff4400','#ffaa00','#ff4400'], glow:'#ff6600'},
+  ice:     {name:'ICE',      price:12, col:['#00ddff','#aaeeff','#00ddff'], glow:'#00ccff'},
+  toxic:   {name:'TOXIC',    price:18, col:['#22ff44','#aaff22','#22ff44'], glow:'#00ff44'},
+  shadow:  {name:'SHADOW',   price:25, col:['#554477','#9977cc','#554477'], glow:'#8855bb'},
+  gold:    {name:'GOLD',     price:35, col:['#b8860b','#ffe566','#b8860b'], glow:'#ffd60a'},
+  galaxy:  {name:'GALAXY',   price:50, col:['#7b2ff7','#e040fb','#7b2ff7'], glow:'#bf5af2'},
+  boss:    {name:'BOSS RED', price:70, col:['#cc1a00','#ff5522','#cc1a00'], glow:'#ff2d55'},
+};
+const SKIN_IDS=Object.keys(SKINS);
+const SHOP_BTN={x:160,y:448,w:160,h:30}; // idle-screen button
+// Cached persistent state (avoids repeated localStorage reads per frame)
+let _wallet=parseInt(localStorage.getItem('ark_wallet')||'0');
+let _owned=(()=>{try{const a=JSON.parse(localStorage.getItem('ark_skins'));return Array.isArray(a)?a:['classic'];}catch{return['classic'];}})();
+let _equipped=localStorage.getItem('ark_equipped')||'classic';
+if(!SKINS[_equipped])_equipped='classic';
+function _saveWallet(n){_wallet=Math.max(0,n);localStorage.setItem('ark_wallet',_wallet);}
+function _saveOwned(a){_owned=a;localStorage.setItem('ark_skins',JSON.stringify(a));}
+function _saveEquipped(id){_equipped=id;localStorage.setItem('ark_equipped',id);}
+function handleShopClick(x,y){
+  // Back button
+  if(x>=8&&x<=104&&y>=H-44&&y<=H-16){st.phase='idle';return;}
+  const wallet=_wallet;
+  SKIN_IDS.forEach((id,i)=>{
+    const col=i%2, row=Math.floor(i/2);
+    const cx=6+col*240, cy=72+row*84;
+    const btnX=cx+240-68, btnY=cy+84/2-16, btnW=60, btnH=32;
+    if(x>=btnX&&x<=btnX+btnW&&y>=btnY&&y<=btnY+btnH){
+      if(_owned.includes(id)){_saveEquipped(id);}
+      else if(wallet>=SKINS[id].price){
+        _saveWallet(wallet-SKINS[id].price);
+        _saveOwned([..._owned,id]);
+        _saveEquipped(id);
+      }
+    }
+  });
+}
+
 // ── Level layout helpers ──────────────────────────────────────
 const N=(c,p=null)=>({t:'n',c,p});
 const S=(p=null)=>({t:'s',p});
@@ -457,9 +497,25 @@ function fireHyper(){
   s.hyper=0; SFX.hyperBeam();
 }
 let lastTap=0,tapCount=0;
-canvas.addEventListener('click',launch);
-canvas.addEventListener('touchstart',e=>{e.preventDefault();launch();
-  const r=canvas.getBoundingClientRect();st.targetX=(e.touches[0].clientX-r.left)/SC();
+function canvasClick(cx,cy){
+  if(st.phase==='shop'){handleShopClick(cx,cy);return;}
+  if(st.phase==='idle'){
+    if(cx>=SHOP_BTN.x&&cx<=SHOP_BTN.x+SHOP_BTN.w&&cy>=SHOP_BTN.y&&cy<=SHOP_BTN.y+SHOP_BTN.h){
+      st.phase='shop';return;
+    }
+  }
+  launch();
+}
+canvas.addEventListener('click',e=>{
+  const r=canvas.getBoundingClientRect();
+  canvasClick((e.clientX-r.left)/SC(),(e.clientY-r.top)/SC());
+});
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const r=canvas.getBoundingClientRect();
+  const tx=(e.touches[0].clientX-r.left)/SC(),ty=(e.touches[0].clientY-r.top)/SC();
+  st.targetX=tx;
+  canvasClick(tx,ty);
 },{passive:false});
 canvas.addEventListener('touchmove',e=>{
   e.preventDefault();
@@ -503,6 +559,7 @@ document.addEventListener('fullscreenchange',()=>{
   resize();
 });
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&st.phase==='shop'){st.phase='idle';return;}
   if(e.key===' '){e.preventDefault();launch();}
   if(e.key==='ArrowLeft') st.targetX=(st.paddle.x+st.paddle.w/2)-30;
   if(e.key==='ArrowRight')st.targetX=(st.paddle.x+st.paddle.w/2)+30;
@@ -846,6 +903,7 @@ function tick(){
     if(c.y+8>PY&&c.y<PY+PH&&c.x+8>s.paddle.x&&c.x-8<s.paddle.x+PW){
       s.score+=c.value;
       s.coinCount++;
+      _saveWallet(_wallet+1);
       const col=c.tier==='gold'?'#ffd60a':c.tier==='silver'?'#ddd':'#cd7f32';
       s.floaters.push({x:c.x,y:PY-12,vy:-1.1,life:1,text:`+${c.value}`,color:col});
       SFX.coin();
@@ -1690,11 +1748,12 @@ function draw(){
   const isLa=s.fx.LASER&&s.fx.LASER>now,isWi=s.fx.WIDE&&s.fx.WIDE>now;
   const isTi=s.fx.TINY&&s.fx.TINY>now,isCa=s.fx.CATCH&&s.fx.CATCH>now;
   const isStun=s.stunTimer>0;
+  const _sc=SKINS[_equipped]||SKINS.classic;
   const pc=isStun?['#888','#ccc','#888']:isLa?['#bf5af2','#d48aff','#bf5af2']:isCa?['#ff9f0a','#ffd060','#ff9f0a']:
-    isWi?['#30d158','#6ee89a','#30d158']:isTi?['#ff2d55','#ff6b82','#ff2d55']:['#4da6ff','#a0d4ff','#4da6ff'];
+    isWi?['#30d158','#6ee89a','#30d158']:isTi?['#ff2d55','#ff6b82','#ff2d55']:_sc.col;
   const pg=ctx.createLinearGradient(s.paddle.x,PY,s.paddle.x+PW,PY);
   pg.addColorStop(0,pc[0]);pg.addColorStop(.5,pc[1]);pg.addColorStop(1,pc[2]);
-  ctx.fillStyle=pg;ctx.shadowColor=pc[0];ctx.shadowBlur=14;
+  ctx.fillStyle=pg;ctx.shadowColor=isStun?'#888':isLa?'#bf5af2':isCa?'#ff9f0a':isWi?'#30d158':isTi?'#ff2d55':_sc.glow;ctx.shadowBlur=14;
   ctx.beginPath();ctx.roundRect(s.paddle.x,PY,PW,PH,6);ctx.fill();
   if(isCa){ctx.strokeStyle='rgba(255,200,80,.4)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
     ctx.beginPath();ctx.moveTo(s.paddle.x,PY-4);ctx.lineTo(s.paddle.x+PW,PY-4);ctx.stroke();ctx.setLineDash([]);}
@@ -1798,12 +1857,12 @@ function draw(){
   ctx.font='11px Courier New';
   ctx.fillStyle='#4da6ff';ctx.textAlign='left';ctx.fillText(`LVL ${s.level}`,6,H-7);
   ctx.fillStyle='#ffd60a';ctx.textAlign='center';ctx.fillText(`SCORE ${s.score}`,W/2,H-7);
-  // Coin counter
+  // Coin counter (shows persistent wallet total)
   ctx.textAlign='left';
   const coinPulse=s.coinCount>0&&Math.floor(performance.now()/400)%2===0;
   ctx.fillStyle=coinPulse?'#ffe566':'#ffd60a';
-  ctx.shadowColor='#ffd60a';ctx.shadowBlur=s.coinCount>0?6:0;
-  ctx.fillText(`🪙${s.coinCount}`,W*0.72,H-7);
+  ctx.shadowColor='#ffd60a';ctx.shadowBlur=coinPulse?6:0;
+  ctx.fillText(`🪙${_wallet}`,W*0.72,H-7);
   ctx.shadowBlur=0;
   ctx.fillStyle='#ff2d55';ctx.textAlign='right';
   ctx.fillText('❤️'.repeat(Math.max(s.lives,0)),W-6,H-7);
@@ -1826,6 +1885,17 @@ function draw(){
     ].forEach(([t,c],i)=>{ctx.fillStyle=c;ctx.fillText(t,W/2,112+i*20);});
     ctx.fillStyle='#4da6ff';ctx.font='15px Courier New';
     ctx.fillText('Tippen / SPACE zum Starten',W/2,H-30);
+    // Shop button
+    const sb=SHOP_BTN;
+    const sbHover=false;
+    ctx.fillStyle='rgba(255,214,10,0.12)';ctx.strokeStyle='#ffd60a';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.roundRect(sb.x,sb.y,sb.w,sb.h,8);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#ffd60a';ctx.font='bold 13px Courier New';ctx.textAlign='center';
+    ctx.shadowColor='#ffd60a';ctx.shadowBlur=8;
+    ctx.fillText('🛍 SKIN SHOP',W/2,sb.y+20);
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(255,214,10,0.5)';ctx.font='10px Courier New';
+    ctx.fillText(`🪙 ${_wallet} Münzen`,W/2,sb.y+sb.h+14);
   }
   if(s.phase==='dead'){
     if(s.deadCause==='boss'){
@@ -1884,6 +1954,96 @@ function draw(){
     ctx.fillStyle='#fff';ctx.font='17px Courier New';ctx.fillText('Score: '+s.score,W/2,H/2+8);
     ctx.fillStyle='#4da6ff';ctx.font='13px Courier New';ctx.fillText('Tippen zum Neustart',W/2,H/2+42);
   }
+
+  // ── Skin Shop overlay ──────────────────────────────────────
+  if(s.phase==='shop'){
+    const now2=performance.now();
+    ctx.fillStyle='rgba(5,5,18,0.97)';ctx.fillRect(0,0,W,H);
+    // Header
+    ctx.shadowColor='#ffd60a';ctx.shadowBlur=16;
+    ctx.fillStyle='#ffd60a';ctx.font='bold 20px Courier New';ctx.textAlign='center';
+    ctx.fillText('🛍  SKIN SHOP',W/2,30);
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#888';ctx.font='11px Courier New';
+    ctx.fillText(`Guthaben:`,W/2-20,52);
+    ctx.fillStyle='#ffd60a';ctx.font='bold 11px Courier New';
+    ctx.fillText(`🪙 ${_wallet}`,W/2+34,52);
+    ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(8,60);ctx.lineTo(W-8,60);ctx.stroke();
+
+    // Skin cards — 2 columns × 4 rows
+    const cardW=234,cardH=78,colGap=6,rowGap=6;
+    SKIN_IDS.forEach((id,i)=>{
+      const skin=SKINS[id];
+      const col=i%2,row=Math.floor(i/2);
+      const cx=6+col*(cardW+colGap);
+      const cy=66+row*(cardH+rowGap);
+      const isOwned=_owned.includes(id);
+      const isEq=_equipped===id;
+      const canBuy=_wallet>=skin.price&&!isOwned;
+
+      // Card bg
+      ctx.fillStyle=isEq?'rgba(255,214,10,0.08)':isOwned?'rgba(48,209,88,0.06)':'rgba(255,255,255,0.04)';
+      ctx.strokeStyle=isEq?'#ffd60a':isOwned?'rgba(48,209,88,0.5)':'rgba(255,255,255,0.1)';
+      ctx.lineWidth=isEq?1.5:1;
+      ctx.beginPath();ctx.roundRect(cx,cy,cardW,cardH,8);ctx.fill();ctx.stroke();
+
+      // Mini paddle preview
+      const pg2=ctx.createLinearGradient(cx+8,0,cx+90,0);
+      pg2.addColorStop(0,skin.col[0]);pg2.addColorStop(0.5,skin.col[1]);pg2.addColorStop(1,skin.col[2]);
+      ctx.fillStyle=pg2;ctx.shadowColor=skin.glow;ctx.shadowBlur=isEq?10:5;
+      ctx.beginPath();ctx.roundRect(cx+8,cy+cardH/2-5,82,10,4);ctx.fill();ctx.shadowBlur=0;
+
+      // Name
+      ctx.fillStyle=isEq?'#ffd60a':'#eee';ctx.font='bold 11px Courier New';ctx.textAlign='left';
+      ctx.fillText(skin.name,cx+98,cy+22);
+
+      // Price / owned status
+      if(isEq){
+        ctx.fillStyle='#ffd60a';ctx.font='9px Courier New';
+        ctx.fillText('✦ EQUIPPED',cx+98,cy+38);
+      } else if(isOwned){
+        ctx.fillStyle='#30d158';ctx.font='9px Courier New';
+        ctx.fillText('✓ OWNED',cx+98,cy+38);
+      } else {
+        ctx.fillStyle=canBuy?'#ffd60a':'#555';ctx.font='10px Courier New';
+        ctx.fillText(`🪙 ${skin.price}`,cx+98,cy+38);
+      }
+
+      // Action button
+      const btnX=cx+cardW-66,btnY=cy+cardH/2-15,btnW=58,btnH=30;
+      if(isEq){
+        ctx.fillStyle='rgba(255,214,10,0.18)';ctx.strokeStyle='#ffd60a';ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.roundRect(btnX,btnY,btnW,btnH,5);ctx.fill();ctx.stroke();
+        ctx.fillStyle='#ffd60a';ctx.font='bold 8px Courier New';ctx.textAlign='center';
+        ctx.fillText('ON',btnX+btnW/2,btnY+19);
+      } else if(isOwned){
+        ctx.fillStyle='rgba(48,209,88,0.18)';ctx.strokeStyle='#30d158';ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.roundRect(btnX,btnY,btnW,btnH,5);ctx.fill();ctx.stroke();
+        ctx.fillStyle='#30d158';ctx.font='bold 8px Courier New';ctx.textAlign='center';
+        ctx.fillText('EQUIP',btnX+btnW/2,btnY+19);
+      } else if(canBuy){
+        // Pulsing buy button
+        const bp=0.8+Math.sin(now2*0.005+i)*0.2;
+        ctx.fillStyle=`rgba(255,214,10,${0.15*bp})`;ctx.strokeStyle=`rgba(255,214,10,${bp})`;ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.roundRect(btnX,btnY,btnW,btnH,5);ctx.fill();ctx.stroke();
+        ctx.fillStyle=`rgba(255,214,10,${bp})`;ctx.font='bold 8px Courier New';ctx.textAlign='center';
+        ctx.fillText('BUY',btnX+btnW/2,btnY+19);
+      } else {
+        ctx.fillStyle='rgba(80,80,80,0.15)';ctx.strokeStyle='#333';ctx.lineWidth=1;
+        ctx.beginPath();ctx.roundRect(btnX,btnY,btnW,btnH,5);ctx.fill();ctx.stroke();
+        ctx.fillStyle='#444';ctx.font='bold 8px Courier New';ctx.textAlign='center';
+        ctx.fillText(`🪙${skin.price}`,btnX+btnW/2,btnY+19);
+      }
+    });
+
+    // Back button
+    ctx.fillStyle='rgba(255,255,255,0.06)';ctx.strokeStyle='rgba(255,255,255,0.22)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect(8,H-44,96,28,6);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#aaa';ctx.font='bold 11px Courier New';ctx.textAlign='center';
+    ctx.fillText('← ZURÜCK',56,H-26);
+  }
+
   ctx.restore();
 }
 
