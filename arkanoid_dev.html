@@ -2127,27 +2127,125 @@ function draw(){
     const beam=s.hyperBeam;
     const progress=beam.timer/45;
     const bw=32;
+    const ht=now;
+    const BC={
+      classic:['0,120,255',  '100,190,255', '220,240,255'],
+      fire:   ['255,80,0',   '255,200,0',   '255,255,255'],
+      ice:    ['0,180,255',  '180,235,255', '240,250,255'],
+      toxic:  ['0,200,30',   '120,255,80',  '220,255,200'],
+      shadow: ['80,0,160',   '160,80,240',  '210,170,255'],
+      gold:   ['180,110,0',  '255,210,0',   '255,245,160'],
+      galaxy: ['120,0,255',  '220,60,255',  '255,200,255'],
+      boss:   ['180,0,0',    '255,40,0',    '255,150,100'],
+    };
+    const [be,bm,bc]=BC[_equipped]||BC.fire;
     // Outer glow
     const grad=ctx.createLinearGradient(beam.x-bw*2,0,beam.x+bw*2,0);
-    grad.addColorStop(0,'rgba(255,80,0,0)');
-    grad.addColorStop(0.3,`rgba(255,200,0,${0.3*progress})`);
-    grad.addColorStop(0.5,`rgba(255,255,255,${0.9*progress})`);
-    grad.addColorStop(0.7,`rgba(255,200,0,${0.3*progress})`);
-    grad.addColorStop(1,'rgba(255,80,0,0)');
+    grad.addColorStop(0,`rgba(${be},0)`);
+    grad.addColorStop(0.3,`rgba(${bm},${0.3*progress})`);
+    grad.addColorStop(0.5,`rgba(${bc},${0.9*progress})`);
+    grad.addColorStop(0.7,`rgba(${bm},${0.3*progress})`);
+    grad.addColorStop(1,`rgba(${be},0)`);
     ctx.fillStyle=grad;
     ctx.fillRect(beam.x-bw*2,0,bw*4,PY);
     // Core beam
-    ctx.shadowColor='#fff';ctx.shadowBlur=30;
+    ctx.shadowColor=`rgb(${bm})`; ctx.shadowBlur=30;
     const coreGrad=ctx.createLinearGradient(beam.x-6,0,beam.x+6,0);
-    coreGrad.addColorStop(0,'rgba(255,150,0,0)');
-    coreGrad.addColorStop(0.5,`rgba(255,255,255,${progress})`);
-    coreGrad.addColorStop(1,'rgba(255,150,0,0)');
+    coreGrad.addColorStop(0,`rgba(${be},0)`);
+    coreGrad.addColorStop(0.5,`rgba(${bc},${progress})`);
+    coreGrad.addColorStop(1,`rgba(${be},0)`);
     ctx.fillStyle=coreGrad;
     ctx.fillRect(beam.x-6,0,12,PY);
     ctx.shadowBlur=0;
     // Impact flash at paddle
-    ctx.fillStyle=`rgba(255,220,100,${0.6*progress*Math.random()})`;
+    ctx.fillStyle=`rgba(${bm},${0.6*progress*Math.random()})`;
     ctx.beginPath();ctx.ellipse(beam.x,PY,bw*1.5,10,0,0,Math.PI*2);ctx.fill();
+
+    // ── Skin-specific hyper extras ─────────────────────────────
+    if(_equipped==='shadow'){
+      ctx.save();
+      [[-18,0.12],[-9,0.20],[9,0.20],[18,0.12]].forEach(([off,a])=>{
+        ctx.globalAlpha=a*progress;
+        ctx.fillStyle=`rgb(${bm})`;
+        ctx.fillRect(beam.x+off-3,0,6,PY);
+      });
+      ctx.restore();
+    }
+    if(_equipped==='galaxy'){
+      ctx.save();
+      ['#7b2ff7','#e040fb','#00ddff'].forEach((col,i)=>{
+        const off=Math.sin(ht*0.008+i*2.1)*14;
+        ctx.globalAlpha=0.28*progress;
+        ctx.fillStyle=col; ctx.shadowColor=col; ctx.shadowBlur=8;
+        ctx.fillRect(beam.x+off-2,0,4,PY);
+        ctx.shadowBlur=0;
+      });
+      ctx.restore();
+    }
+    if(_equipped==='ice'){
+      ctx.save();
+      ctx.strokeStyle=`rgba(${bc},1)`; ctx.lineWidth=1.5;
+      for(let k=0;k<7;k++){
+        const side=k%2===0?1:-1;
+        ctx.globalAlpha=(0.65-k*0.08)*progress;
+        ctx.beginPath();
+        ctx.moveTo(beam.x,PY-8);
+        ctx.lineTo(beam.x+side*(14+k*10), PY-8-(6+k*5));
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    if(_equipped==='fire'){
+      for(let k=0;k<8;k++){
+        const side=k%2===0?1:-1;
+        const y=20+((ht*0.05+k*73)%PY);
+        const dx=side*(10+((ht*0.07+k*37)%22));
+        const sz=1.5+((ht*0.05+k*13)%3);
+        ctx.fillStyle=k%3===0
+          ?`rgba(255,255,100,${0.8*progress})`
+          :`rgba(255,${100+k*18},0,${0.7*progress})`;
+        ctx.beginPath(); ctx.arc(beam.x+dx,y,sz,0,Math.PI*2); ctx.fill();
+      }
+    }
+    if(_equipped==='toxic'){
+      for(let k=0;k<6;k++){
+        const bx=beam.x+(k%2===0?1:-1)*(6+k*7);
+        const by=PY-10-((ht*0.05+k*30)%60);
+        ctx.strokeStyle=`rgba(100,255,80,${(0.7-k*0.1)*progress})`;
+        ctx.lineWidth=1.2;
+        ctx.beginPath(); ctx.arc(bx,by,2+k%3,0,Math.PI*2); ctx.stroke();
+      }
+    }
+    if(_equipped==='gold'){
+      ctx.save();
+      ctx.strokeStyle=`rgba(${bc},${0.55*progress})`;
+      ctx.lineWidth=1.5; ctx.shadowColor='#ffd60a'; ctx.shadowBlur=10;
+      const spokeY=PY*0.5;
+      for(let k=0;k<6;k++){
+        const angle=k*(Math.PI/3)+ht*0.002;
+        const len=18+Math.sin(ht*0.007+k)*6;
+        ctx.beginPath();
+        ctx.moveTo(beam.x,spokeY);
+        ctx.lineTo(beam.x+Math.cos(angle)*len, spokeY+Math.sin(angle)*len);
+        ctx.stroke();
+      }
+      ctx.shadowBlur=0; ctx.restore();
+    }
+    if(_equipped==='boss'){
+      const rf=progress*(0.04+Math.sin(ht*0.02)*0.03);
+      const rL=ctx.createLinearGradient(0,0,bw*3,0);
+      rL.addColorStop(0,`rgba(180,0,0,${rf})`); rL.addColorStop(1,'rgba(180,0,0,0)');
+      ctx.fillStyle=rL; ctx.fillRect(0,0,bw*3,PY);
+      const rR=ctx.createLinearGradient(W,0,W-bw*3,0);
+      rR.addColorStop(0,`rgba(180,0,0,${rf})`); rR.addColorStop(1,'rgba(180,0,0,0)');
+      ctx.fillStyle=rR; ctx.fillRect(W-bw*3,0,bw*3,PY);
+    }
+    if(_equipped==='classic'){
+      for(let y=0;y<PY;y+=10){
+        ctx.fillStyle=`rgba(${bc},${0.07*progress})`;
+        ctx.fillRect(beam.x-bw,y,bw*2,1);
+      }
+    }
   }
 
   // Hyper gauge bar (above bottom HUD)
