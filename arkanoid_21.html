@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Arkanoid 窶・DEV</title>
+<title>Arkanoid</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#05050f;display:flex;align-items:flex-start;justify-content:center;
@@ -46,30 +46,30 @@ canvas{border-radius:10px;border:1px solid rgba(77,166,255,.2);
 <canvas id="c"></canvas>
 
 <div id="devpanel">
-  <h3>笞・DEV PANEL</h3>
+  <h3>⚙ DEV PANEL</h3>
   <div class="section">JUMP TO LEVEL</div>
   <div id="lvl-grid"></div>
   <div id="lv-custom">
     <input id="lv-input" type="number" min="1" placeholder="Lv#">
-    <button class="devbtn" style="flex:1" onclick="devJumpLevel(parseInt(document.getElementById('lv-input').value)||1)">Go 竊・/button>
+    <button class="devbtn" style="flex:1" onclick="devJumpLevel(parseInt(document.getElementById('lv-input').value)||1)">Go →</button>
   </div>
   <div class="section">POWER-UPS</div>
-  <button class="devbtn warn" onclick="devGivePU('WIDE')">竊費ｸ・Wide</button>
-  <button class="devbtn warn" onclick="devGivePU('LASER')">鉢 Laser</button>
-  <button class="devbtn warn" onclick="devGivePU('CATCH')">ｧｲ Catch</button>
-  <button class="devbtn warn" onclick="devGivePU('MULTI')">笞｡ Multiball</button>
-  <button class="devbtn warn" onclick="devGivePU('SLOW')">世 Slow</button>
-  <button class="devbtn warn" onclick="devGivePU('LIFE')">笶､・・+Life</button>
-  <button class="devbtn warn" onclick="devGivePU('BREAK')">坎 Break</button>
+  <button class="devbtn warn" onclick="devGivePU('WIDE')">↔️ Wide</button>
+  <button class="devbtn warn" onclick="devGivePU('LASER')">🔫 Laser</button>
+  <button class="devbtn warn" onclick="devGivePU('CATCH')">🧲 Catch</button>
+  <button class="devbtn warn" onclick="devGivePU('MULTI')">⚡ Multiball</button>
+  <button class="devbtn warn" onclick="devGivePU('SLOW')">🐢 Slow</button>
+  <button class="devbtn warn" onclick="devGivePU('LIFE')">❤️ +Life</button>
+  <button class="devbtn warn" onclick="devGivePU('BREAK')">🚪 Break</button>
   <div class="section">CHEATS</div>
-  <button class="devbtn" onclick="devFillHyper()">笞｡ Fill Hyper</button>
-  <button class="devbtn" onclick="devUnlockAllSkins()">耳 All Skins + 999ｪ・/button>
-  <button class="devbtn" onclick="devGodMode()">孱 God Mode</button>
-  <button class="devbtn danger" onclick="devKillAll()">逐 Kill All Bricks</button>
-  <button class="devbtn danger" onclick="devSpawnBoss()">太 Spawn Boss Now</button>
-  <button class="devbtn danger" onclick="devBurstBoss()">笞｡ Boss Burst Mode</button>
-  <button class="devbtn danger" onclick="devEnrageBoss()">櫨 Boss Enrage Mode</button>
-  <button class="devbtn danger" onclick="devKillBoss()">笘 Kill Boss</button>
+  <button class="devbtn" onclick="devFillHyper()">⚡ Fill Hyper</button>
+  <button class="devbtn" onclick="devUnlockAllSkins()">🎨 All Skins + 999🪙</button>
+  <button class="devbtn" onclick="devGodMode()">🛡 God Mode</button>
+  <button class="devbtn danger" onclick="devKillAll()">💀 Kill All Bricks</button>
+  <button class="devbtn danger" onclick="devSpawnBoss()">👾 Spawn Boss Now</button>
+  <button class="devbtn danger" onclick="devBurstBoss()">⚡ Boss Burst Mode</button>
+  <button class="devbtn danger" onclick="devEnrageBoss()">🔥 Boss Enrage Mode</button>
+  <button class="devbtn danger" onclick="devKillBoss()">☠ Kill Boss</button>
   <div id="dev-info">
     LVL <span id="di-lv">-</span> &nbsp; LIVES <span id="di-lv2">-</span><br>
     BALLS <span id="di-b">-</span> &nbsp; HYPER <span id="di-h">-</span><br>
@@ -79,12 +79,12 @@ canvas{border-radius:10px;border:1px solid rgba(77,166,255,.2);
 <script>
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
 
-// 笏笏 Constants 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Constants ─────────────────────────────────────────────────
 const W=480,H=520,PH=12,PY=478,BR=7;
 const BASE_SPEED=7.5,SPD_INC=0.35,MAX_SPD=9.5,MAX_SPD_2=12.0,SLOW_MULT=0.55;
 const STEP=1000/60;
 
-// 笏笏 Responsive canvas 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Responsive canvas ─────────────────────────────────────────
 function resize(){
   const r=Math.min((innerWidth-8)/480,(innerHeight-8)/520);
   canvas.width=Math.floor(480*r); canvas.height=Math.floor(520*r);
@@ -93,24 +93,24 @@ function resize(){
 resize(); window.addEventListener('resize',()=>{resize();});
 const SC=()=>canvas.width/480;
 
-// 笏笏 Color palettes 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Color palettes ────────────────────────────────────────────
 const COLORS=[
   ['#ff2d55','#ff6b82'],['#ff9f0a','#ffbf4d'],['#ffd60a','#ffe566'],
   ['#30d158','#6ee89a'],['#0a84ff','#4da6ff'],['#bf5af2','#d48aff'],
 ];
 const PU={
-  WIDE: {emoji:'竊費ｸ・, label:'BREIT',    color:'#4da6ff',bg:'#0a2040',dur:8000},
-  SLOW: {emoji:'世', label:'LANGSAM',  color:'#30d158',bg:'#0a2014',dur:7000},
-  MULTI:{emoji:'笞｡', label:'MULTIBALL',color:'#ffd60a',bg:'#201800',dur:null},
-  LIFE: {emoji:'笶､・・, label:'+LEBEN',   color:'#ff2d55',bg:'#200814',dur:null},
-  LASER:{emoji:'鉢', label:'LASER',    color:'#bf5af2',bg:'#180a28',dur:7000},
-  CATCH:{emoji:'ｧｲ', label:'CATCH',    color:'#ff9f0a',bg:'#201000',dur:10000},
-  BREAK:{emoji:'坎', label:'BREAK',    color:'#30d158',bg:'#0a2014',dur:null},
-  TINY: {emoji:'豫', label:'MINI!',    color:'#ff6b82',bg:'#200808',dur:6000},
+  WIDE: {emoji:'↔️', label:'BREIT',    color:'#4da6ff',bg:'#0a2040',dur:8000},
+  SLOW: {emoji:'🐢', label:'LANGSAM',  color:'#30d158',bg:'#0a2014',dur:7000},
+  MULTI:{emoji:'⚡', label:'MULTIBALL',color:'#ffd60a',bg:'#201800',dur:null},
+  LIFE: {emoji:'❤️', label:'+LEBEN',   color:'#ff2d55',bg:'#200814',dur:null},
+  LASER:{emoji:'🔫', label:'LASER',    color:'#bf5af2',bg:'#180a28',dur:7000},
+  CATCH:{emoji:'🧲', label:'CATCH',    color:'#ff9f0a',bg:'#201000',dur:10000},
+  BREAK:{emoji:'🚪', label:'BREAK',    color:'#30d158',bg:'#0a2014',dur:null},
+  TINY: {emoji:'😬', label:'MINI!',    color:'#ff6b82',bg:'#200808',dur:6000},
 };
 const PU_KEYS=Object.keys(PU);
 
-// 笏笏 Skin shop 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Skin shop ─────────────────────────────────────────────────
 const SKINS={
   classic: {name:'CLASSIC',  price:0,  col:['#4da6ff','#a0d4ff','#4da6ff'], glow:'#4da6ff'},
   fire:    {name:'FIRE',     price:8,  col:['#ff4400','#ffaa00','#ff4400'], glow:'#ff6600'},
@@ -148,21 +148,21 @@ function handleShopClick(x,y){
   });
 }
 
-// 笏笏 Level layout helpers 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Level layout helpers ──────────────────────────────────────
 const N=(c,p=null)=>({t:'n',c,p});
 const S=(p=null)=>({t:'s',p});
 const G=()=>({t:'g'});
 const _=null;
 
 const LAYOUTS=[
-  // Lv1 窶・gentle intro: 3 full rows, no silver (30 bricks)
+  // Lv1 – gentle intro: 3 full rows, no silver (30 bricks)
   [
     [N(0),N(0),N(0),N(0),N(0,'WIDE'),N(0),N(0),N(0,'LIFE'),N(0),N(0)],
     [N(1),N(1),N(1,'SLOW'),N(1),N(1),N(1),N(1),N(1),N(1),N(1)],
     [N(2),N(2),N(2),N(2),N(2),N(2),N(2,'MULTI'),N(2),N(2),N(2)],
     [_,_,_,_,_,_,_,_,_,_],[_,_,_,_,_,_,_,_,_,_],[_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv2 窶・checkerboard: alternating bricks and gaps, silvers lurk in the grid (18N+2S)
+  // Lv2 – checkerboard: alternating bricks and gaps, silvers lurk in the grid (18N+2S)
   [
     [N(0),_,N(1),_,N(2,'WIDE'),_,N(3),_,N(4,'LIFE'),_],
     [_,N(5),_,N(0),_,N(1),_,N(2),_,N(3)],
@@ -171,7 +171,7 @@ const LAYOUTS=[
     [_,_,_,_,_,_,_,_,_,_],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv3 窶・diamond: first shaped pattern, silver bricks throughout (14N+9S)
+  // Lv3 – diamond: first shaped pattern, silver bricks throughout (14N+9S)
   [
     [_,_,_,N(3),S('WIDE'),N(3),_,_,_,_],
     [_,_,N(2),S(),N(2,'CATCH'),S(),N(2),_,_,_],
@@ -180,7 +180,7 @@ const LAYOUTS=[
     [_,_,_,N(3),S('LIFE'),N(3),_,_,_,_],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv4 窶・funnel: solid triangle pointing down, widest at top, tip at bottom (26N+4S)
+  // Lv4 – funnel: solid triangle pointing down, widest at top, tip at bottom (26N+4S)
   [
     [N(0),N(1),N(2),N(3),N(4,'WIDE'),N(5),N(0),N(1),N(2),N(3)],
     [_,N(4),N(5),N(0),S('LIFE'),S('SLOW'),N(1),N(5),N(4),_],
@@ -189,7 +189,7 @@ const LAYOUTS=[
     [_,_,_,_,N(3,'MULTI'),N(4),_,_,_,_],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv5 窶・gold columns: gold guards on left+right, dense silver interior (31N+10S+8G)
+  // Lv5 – gold columns: gold guards on left+right, dense silver interior (31N+10S+8G)
   [
     [_,  N(0),N(1,'LASER'),N(2),S('MULTI'),S(),     N(3),N(4),N(5),   _],
     [G(),S(),  N(1),       N(2),N(3,'WIDE'),N(4),   N(5),S(), N(0),   G()],
@@ -198,7 +198,7 @@ const LAYOUTS=[
     [_,  N(3), S(),  N(2), N(1),            N(0),   S('MULTI'),N(5),N(4),_],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv6 窶・castle: gold crenellations at top, tower walls, packed floor (24N+4S+10G)
+  // Lv6 – castle: gold crenellations at top, tower walls, packed floor (24N+4S+10G)
   [
     [G(),_,G(),_,G(),G(),_,G(),_,G()],
     [G(),N(0),G(),N(1),N(2),N(3),N(4),G(),N(5),G()],
@@ -207,7 +207,7 @@ const LAYOUTS=[
     [_,N(4),N(5),N(0),N(1),N(2),N(3),N(4),N(5),_],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv7 窶・fortress: gold walls enclose sparse interior, reach in (12N+4S+24G)
+  // Lv7 – fortress: gold walls enclose sparse interior, reach in (12N+4S+24G)
   [
     [G(),G(),G(),G(),_,_,G(),G(),G(),G()],
     [G(),_,_,_,_,_,_,_,_,G()],
@@ -216,7 +216,7 @@ const LAYOUTS=[
     [G(),_,_,_,_,_,_,_,_,G()],
     [G(),G(),G(),G(),_,_,G(),G(),G(),G()],
   ],
-  // Lv8 窶・zipper: two rows of offset gold teeth divide the field; weave the ball through to reach the top (26N+4S+10G)
+  // Lv8 – zipper: two rows of offset gold teeth divide the field; weave the ball through to reach the top (26N+4S+10G)
   [
     [N(0),N(1),N(2),N(3),S('WIDE'),N(4),N(5),N(0),S('LIFE'),N(1)],
     [N(2),N(3),N(4),S('CATCH'),N(5),N(0),N(1),S('LASER'),N(2),N(3)],
@@ -225,7 +225,7 @@ const LAYOUTS=[
     [N(4),N(5),N(0),N(1),N(2,'MULTI'),N(3),N(4),N(5),N(0),N(1)],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv9 窶・X shape: diagonal cross with gold centre (20N+8S+4G)
+  // Lv9 – X shape: diagonal cross with gold centre (20N+8S+4G)
   [
     [N(5,'WIDE'),_,_,_,S(),S(),_,_,_,N(5)],
     [_,N(4),N(4),_,S('CATCH'),S(),_,N(4),N(4),_],
@@ -234,7 +234,7 @@ const LAYOUTS=[
     [_,N(1),N(1),_,S('LASER'),S(),_,N(1),N(1),_],
     [N(0),_,_,_,S(),S(),_,_,_,N(0,'LIFE')],
   ],
-  // Lv10 窶・plus cross: cardinal cross (+) with gold core, silver arms (20N+8S+4G)
+  // Lv10 – plus cross: cardinal cross (+) with gold core, silver arms (20N+8S+4G)
   [
     [_,_,_,_,N(0),N(1),_,_,_,_],
     [_,_,_,N(2),S('WIDE'),S('LIFE'),N(5),_,_,_],
@@ -243,7 +243,7 @@ const LAYOUTS=[
     [_,_,_,N(4),S('SLOW'),S(),N(1),_,_,_],
     [_,_,_,_,N(2),N(3),_,_,_,_],
   ],
-  // Lv11 窶・skull: gold eye sockets persist, silver teeth at the jaw (30N+5S+8G)
+  // Lv11 – skull: gold eye sockets persist, silver teeth at the jaw (30N+5S+8G)
   [
     [_,N(0),N(1),N(2),N(3),N(4),N(5),N(0),N(1),_],
     [N(2),N(3),G(),G(),N(4),N(5),G(),G(),N(0),N(1)],
@@ -252,7 +252,7 @@ const LAYOUTS=[
     [S(),N(0),S('LASER'),N(1),S('LIFE'),N(2),S('MULTI'),N(3),S('SLOW'),N(4)],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv12 窶・dense mix: maximum pre-boss density, gold+silver storm (~40N+10S+10G)
+  // Lv12 – dense mix: maximum pre-boss density, gold+silver storm (~40N+10S+10G)
   [
     ...[0,1,2,3,4,5].map(r=>
       Array.from({length:10},(_,c)=>({
@@ -263,7 +263,7 @@ const LAYOUTS=[
       }))
     ),
   ],
-  // Lv13 boss slot 窶・bricks cleared for boss fight; arrowhead used if cycled back
+  // Lv13 boss slot – bricks cleared for boss fight; arrowhead used if cycled back
   [
     [_,_,_,_,N(0),N(1),_,_,_,_],
     [_,_,_,N(2),N(3),N(4),N(5),_,_,_],
@@ -290,7 +290,7 @@ const LAYOUTS=[
     [G(),N(4),N(5),S('SLOW'),N(0),N(0),S('CATCH'),N(5),N(4),G()],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv16: pyramid 窶・gold peak, expands to dense base
+  // Lv16: pyramid – gold peak, expands to dense base
   [
     [_,_,_,_,G(),G(),_,_,_,_],
     [_,_,_,N(0),N(1),N(2),N(3),_,_,_],
@@ -326,7 +326,7 @@ const LAYOUTS=[
     [N(0),S(),N(1),N(2),S('MULTI'),S('CATCH'),N(3),N(4),S(),N(5)],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv20: Z-banner 窶・wide diagonal steps
+  // Lv20: Z-banner – wide diagonal steps
   [
     [N(0),N(1),N(2),N(3),N(4,'WIDE'),N(5),N(0),N(1),N(2),N(3)],
     [_,_,_,_,N(4),N(5),N(0),N(1),N(2),N(3)],
@@ -335,7 +335,7 @@ const LAYOUTS=[
     [N(2),N(3),N(4),N(5),N(0),N(1,'MULTI'),N(2),N(3),N(4,'CATCH'),N(5)],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv21: silver cross 窶・full outer rows, hollow inner columns
+  // Lv21: silver cross – full outer rows, hollow inner columns
   [
     [N(0),N(1),N(2),N(3),S('WIDE'),S(),N(4),N(5),N(0),N(1)],
     [N(2),N(3),_,S('LASER'),N(4),N(5),S(),_,N(0),N(1)],
@@ -344,7 +344,7 @@ const LAYOUTS=[
     [N(2),N(3),N(4),N(5),S(),S(),N(0),N(1),N(2),N(3)],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv22: linked diamonds 窶・two overlapping diamonds joined at centre
+  // Lv22: linked diamonds – two overlapping diamonds joined at centre
   [
     [_,N(0),N(1),_,_,_,N(3),N(4),_,_],
     [N(2),N(3),N(4,'WIDE'),N(2),_,N(5),N(0),N(1,'CATCH'),N(5),_],
@@ -362,7 +362,7 @@ const LAYOUTS=[
     [_,N(5),_,N(0),_,N(1),_,N(2),_,N(3)],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv24: the wall 窶・maximum density
+  // Lv24: the wall – maximum density
   [
     [S(),N(0),S(),N(1),S(),N(2),S(),N(3),S(),N(4)],
     [N(5),S(),N(0),S(),N(1),S(),N(2),S(),N(3),S()],
@@ -373,7 +373,7 @@ const LAYOUTS=[
   ],
 ];
 
-// 笏笏 Brick factory 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Brick factory ─────────────────────────────────────────────
 function makeBricks(lv){
   const layout=LAYOUTS[(lv-1)%LAYOUTS.length];
   const bw=W/10,bh=22,bp=3,top=52,silverHits=2+Math.floor(lv/3);
@@ -392,7 +392,7 @@ function makeBricks(lv){
   return bricks;
 }
 
-// 笏笏 Enemy factory 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Enemy factory ─────────────────────────────────────────────
 const ECOLS={dart:'#ff2d55',swoop:'#ff9f0a',zigzag:'#bf5af2',crawler:'#00e5ff'};
 function spawnEnemy(lv){
   const types=['dart','swoop','zigzag'];
@@ -421,7 +421,7 @@ function spawnCrawler(bricks,lv){
   };
 }
 
-// 笏笏 Audio engine (Web Audio API, procedural) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Audio engine (Web Audio API, procedural) ──────────────────
 let AC=null;
 function getAC(){
   if(!AC) AC=new(window.AudioContext||window.webkitAudioContext)();
@@ -564,7 +564,7 @@ function makeBall(lv,x,y){
   return{x:x??240,y:y??(PY-BR-2),vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,caught:false,catchOff:0};
 }
 
-// 笏笏 Boss: DOH 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Boss: DOH ─────────────────────────────────────────────────
 const BOSS_MAX_HP = 30;
 function spawnBoss(){
   return {
@@ -585,9 +585,9 @@ function spawnBoss(){
     hitFlash: 0,
     hitCooldown: 0,
     entering: true,          // entry slide-in animation
-    entryProgress: 0,        // 0竊・
-    transforming: false,     // enrage cocoon竊檀exagon transition
-    transformProgress: 0,    // 0竊・
+    entryProgress: 0,        // 0→1
+    transforming: false,     // enrage cocoon→hexagon transition
+    transformProgress: 0,    // 0→1
     dying: false,            // death animation active
     dyingTimer: 0,           // counts down from 210
     dyingExpTimer: 8,        // frames until next explosion during death
@@ -606,7 +606,7 @@ function initState(lv=1){
 }
 let st=initState();
 
-// 笏笏 Power-up application 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Power-up application ──────────────────────────────────────
 function spawnFX(x,y,color,n=10){
   for(let i=0;i<n;i++){
     const a=Math.random()*Math.PI*2,sp=1+Math.random()*4;
@@ -636,7 +636,7 @@ function applyPU(type){
   spawnFX(s.paddle.x+s.paddle.w/2,PY,d.color,14);
 }
 
-// 笏笏 Launch / restart 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Launch / restart ──────────────────────────────────────────
 function launch(){
   const s=st;
   if(s.phase==='idle'||s.phase==='dead'){
@@ -738,7 +738,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='x'||e.key==='X') fireHyper();
 });
 
-// 笏笏 Fixed-timestep tick 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Fixed-timestep tick ───────────────────────────────────────
 function tick(){
   const s=st;
   if(paused)return;
@@ -762,7 +762,7 @@ function tick(){
   const isStunned=s.stunTimer>0;
   if(isStunned) s.stunTimer--;
 
-  // Paddle 窶・dramatically slower when stunned
+  // Paddle – dramatically slower when stunned
   const followSpeed = isStunned ? 0.025 : 0.18;
   s.paddle.x+=(s.targetX-(s.paddle.x+PW/2))*followSpeed;
   s.paddle.x=Math.max(0,Math.min(W-PW,s.paddle.x));
@@ -856,7 +856,7 @@ function tick(){
         SFX.enemyShoot();
       }
 
-      // Hit paddle directly 竊・stun player
+      // Hit paddle directly → stun player
       if(e.y+e.h>PY&&e.y<PY+PH&&e.x+e.w/2>s.paddle.x&&e.x-e.w/2<s.paddle.x+PW){
         spawnFX(e.x,e.y,'#00e5ff',18);e.alive=false;
         if(s.stunTimer<=0) SFX.stun();
@@ -1008,7 +1008,7 @@ function tick(){
 
   for(let i=dead.length-1;i>=0;i--)s.balls.splice(dead[i],1);
 
-  // 笏笏 Boss ball collision (post-move, one hit per ball per frame) 笏笏
+  // ── Boss ball collision (post-move, one hit per ball per frame) ──
   if(s.boss&&s.boss.alive&&!s.boss.entering&&s.boss.hitCooldown===0){
     const boss=s.boss;
     const faceX=boss.x, faceY=boss.y-boss.h/2+20, faceR=36;
@@ -1091,7 +1091,7 @@ function tick(){
     if(f.life<=0) s.floaters.splice(i,1);
   }
 
-  // 笏笏 Skin effects 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+  // ── Skin effects ──────────────────────────────────────────────
   const _skId=_equipped;
   s.balls.forEach(b=>{
     if(!b.caught) s.ballTrail.push({x:b.x,y:b.y,life:1});
@@ -1282,12 +1282,12 @@ function tick(){
     if(beam.timer<=0) s.hyperBeam=null;
   }
 
-  // 笏笏 Boss tick 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+  // ── Boss tick ────────────────────────────────────────────────
   if(s.boss&&(s.boss.alive||s.boss.dying)){
     const b=s.boss;
     b.phase+=0.04;
 
-    // 笏 Entry: slide in from top 笏
+    // ─ Entry: slide in from top ─
     if(b.entering){
       b.entryProgress=Math.min(b.entryProgress+0.014,1);
       const ease=1-Math.pow(1-b.entryProgress,3);
@@ -1300,7 +1300,7 @@ function tick(){
       return;
     }
 
-    // 笏 Death animation 笏
+    // ─ Death animation ─
     if(b.dying){
       b.dyingTimer--;
       b.dyingExpTimer--;
@@ -1320,7 +1320,7 @@ function tick(){
     if(b.hitFlash>0) b.hitFlash--;
     if(b.hitCooldown>0) b.hitCooldown--;
 
-    // 笏 Transformation animation: hold still while cocoon opens 笏
+    // ─ Transformation animation: hold still while cocoon opens ─
     if(b.transforming){
       b.transformProgress=Math.min(b.transformProgress+0.008,1);
       if(b.transformProgress>=1){
@@ -1388,7 +1388,7 @@ function tick(){
       }
     }
 
-    // Stun shot 窶・periodic, 3-shot spread aimed at paddle, stuns instead of dealing damage
+    // Stun shot — periodic, 3-shot spread aimed at paddle, stuns instead of dealing damage
     b.stunShotTimer--;
     if(b.stunShotTimer<=0){
       const tx=s.paddle.x+s.paddle.w/2, ty=PY;
@@ -1694,7 +1694,7 @@ function draw(){
         ctx.restore();
       }
     } else if(b.enrageMode){
-      // 笏笏笏 HEXAGON MACHINE 笏笏笏
+      // ─── HEXAGON MACHINE ───
       const R=44;
       ctx.shadowColor=flash?'#fff':'#ff2d55'; ctx.shadowBlur=flash?32:20;
       ctx.strokeStyle=`rgba(255,45,85,${0.3+Math.sin(b.phase*5)*0.25})`; ctx.lineWidth=7;
@@ -1732,12 +1732,12 @@ function draw(){
       cg.addColorStop(0,'#fff'); cg.addColorStop(0.35,'#ff2d55'); cg.addColorStop(1,'rgba(255,45,85,0)');
       ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(bx,by,cr+4,0,Math.PI*2); ctx.fill();
     } else {
-      // 笏笏笏 MUSHROOM 笏笏笏
+      // ─── MUSHROOM ───
       const breath=Math.sin(b.phase*1.5)*2; // gentle breathing bob
       const capColor=b.burstMode?'#ff7720':'#dd2200';
       const capHi=b.burstMode?'#ffb060':'#ff5522';
 
-      // 笏笏 Stem 笏笏
+      // ── Stem ──
       const sW=46,sH=36,sX=bx-sW/2,sY=by+10+breath;
       ctx.shadowBlur=0;
       const stemG=ctx.createLinearGradient(sX,0,sX+sW,0);
@@ -1755,14 +1755,14 @@ function draw(){
       ctx.beginPath(); ctx.moveTo(bx-10,sY+6); ctx.lineTo(bx-10,sY+sH-6); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(bx+10,sY+6); ctx.lineTo(bx+10,sY+sH-6); ctx.stroke();
 
-      // 笏笏 Gills under cap brim 笏笏
+      // ── Gills under cap brim ──
       ctx.strokeStyle='rgba(60,10,3,0.3)'; ctx.lineWidth=1.2;
       for(let gi=-5;gi<=5;gi++){
         const gx=bx+gi*9, gy=sY-1;
         ctx.beginPath(); ctx.moveTo(gx-3,gy); ctx.lineTo(gx,gy-6); ctx.lineTo(gx+3,gy); ctx.stroke();
       }
 
-      // 笏笏 Cap 笏笏
+      // ── Cap ──
       const capCY=by-14+breath;
       ctx.shadowColor=flash?'#fff':capColor; ctx.shadowBlur=flash?30:22;
       const capG=ctx.createRadialGradient(bx-18,by-40+breath,2,bx,capCY,66);
@@ -1771,7 +1771,7 @@ function draw(){
       capG.addColorStop(0.78,flash?'#ff9999':b.burstMode?'#882200':'#780900');
       capG.addColorStop(1,flash?'#ff6666':'#2e0400');
       ctx.fillStyle=capG;
-      // Mushroom cap bezier path 窶・dome + brim overhang
+      // Mushroom cap bezier path — dome + brim overhang
       ctx.beginPath();
       ctx.moveTo(bx-60,by+2+breath);
       ctx.bezierCurveTo(bx-64,by-4+breath,bx-57,by-17+breath,bx-50,by-27+breath);
@@ -1782,14 +1782,14 @@ function draw(){
       // Rim stroke
       ctx.strokeStyle=flash?'rgba(255,255,255,0.55)':'rgba(255,140,70,0.32)'; ctx.lineWidth=1.5;
       ctx.stroke(); ctx.shadowBlur=0;
-      // Specular highlight 窶・primary
+      // Specular highlight — primary
       ctx.fillStyle=`rgba(255,255,255,${flash?0.18:0.22})`;
       ctx.beginPath(); ctx.ellipse(bx-18,by-40+breath,20,12,-0.5,0,Math.PI*2); ctx.fill();
-      // Specular 窶・soft secondary
+      // Specular — soft secondary
       ctx.fillStyle=`rgba(255,255,255,${flash?0.06:0.09})`;
       ctx.beginPath(); ctx.ellipse(bx-6,by-28+breath,34,20,-0.4,0,Math.PI*2); ctx.fill();
 
-      // 笏笏 Spots 窶・hexagons 笏笏
+      // ── Spots — hexagons ──
       const drawHex=(cx,cy,r,rot)=>{ctx.beginPath();for(let i=0;i<6;i++){const a=rot+(i/6)*Math.PI*2-Math.PI/2;i===0?ctx.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r):ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}ctx.closePath();};
       [[bx,by-45+breath,10.5,0],[bx-25,by-27+breath,7.5,Math.PI/6],[bx+25,by-27+breath,7.5,-Math.PI/6],
        [bx-45,by-10+breath,5.5,Math.PI/4],[bx+45,by-10+breath,5.5,-Math.PI/4]].forEach(([sx,sy,sr,rot],idx)=>{
@@ -1810,7 +1810,7 @@ function draw(){
         ctx.shadowBlur=0;
       });
 
-      // 笏笏 Eyebrows 笏笏
+      // ── Eyebrows ──
       const eyeY=by+2+breath;
       const browY=eyeY-13;
       ctx.lineCap='round'; ctx.lineWidth=4.5;
@@ -1825,7 +1825,7 @@ function draw(){
       }
       ctx.shadowBlur=0; ctx.lineCap='butt';
 
-      // 笏笏 Eyes 窶・oval Makibao style 笏笏
+      // ── Eyes — oval Makibao style ──
       [[bx-14,b.eyeL],[bx+14,b.eyeR]].forEach(([ex,eye])=>{
         ctx.fillStyle='#060200';
         ctx.beginPath(); ctx.ellipse(ex,eyeY,15,eye.open*9+1,0,0,Math.PI*2); ctx.fill();
@@ -1849,7 +1849,7 @@ function draw(){
         ctx.beginPath(); ctx.ellipse(bx+25,eyeY+5,9,5,0,0,Math.PI*2); ctx.fill();
       }
 
-      // 笏笏 Mouth / horse teeth 笏笏
+      // ── Mouth / horse teeth ──
       const mouthY=eyeY+19;
       if(b.burstMode){
         const bmy=mouthY+8;
@@ -1885,7 +1885,7 @@ function draw(){
         ctx.fillText('K',bx+13,mouthY-5);
         ctx.textAlign='left'; ctx.textBaseline='alphabetic';
       } else {
-        // Relaxed 窶・dark interior, teeth strip, red tongue
+        // Relaxed — dark interior, teeth strip, red tongue
         ctx.fillStyle='#140400';
         ctx.beginPath(); ctx.arc(bx,mouthY,13,0.12,Math.PI-0.12); ctx.fill();
         ctx.fillStyle='#f0ece0';
@@ -1912,13 +1912,13 @@ function draw(){
       ctx.fillText(`${b.hp}/${b.maxHp}`,bx,barY-2);
       if(b.enrageMode){
         ctx.fillStyle=`rgba(255,45,85,${0.6+Math.sin(b.phase*8)*0.4})`;
-        ctx.font='bold 11px Courier New'; ctx.fillText('笞 ENRAGE',bx,by+b.h/2+14);
+        ctx.font='bold 11px Courier New'; ctx.fillText('⚠ ENRAGE',bx,by+b.h/2+14);
       } else if(b.burstMode){
         ctx.fillStyle=`rgba(255,159,10,${0.6+Math.sin(b.phase*6)*0.4})`;
-        ctx.font='bold 11px Courier New'; ctx.fillText('笞｡ BURST',bx,by+b.h/2+14);
+        ctx.font='bold 11px Courier New'; ctx.fillText('⚡ BURST',bx,by+b.h/2+14);
       } else if(b.transforming){
         ctx.fillStyle=`rgba(255,200,50,${0.7+Math.sin(b.phase*10)*0.3})`;
-        ctx.font='bold 11px Courier New'; ctx.fillText('笞｡ TRANSFORMING...',bx,by+b.h/2+14);
+        ctx.font='bold 11px Courier New'; ctx.fillText('⚡ TRANSFORMING...',bx,by+b.h/2+14);
       }
     }
     ctx.restore();
@@ -1940,7 +1940,7 @@ function draw(){
     }
   }
 
-  // Boss bullets 窶・oriented bullet shapes / stun orbs
+  // Boss bullets — oriented bullet shapes / stun orbs
   s.eLasers.filter(el=>el.isBoss).forEach(el=>{
     const cx=el.x+el.w/2, cy=el.y+el.h/2;
     if(el.isStun){
@@ -2040,7 +2040,7 @@ function draw(){
     ctx.shadowBlur=0; ctx.restore();
   });
 
-  // 笏笏 Skin: shadow trail (drawn behind paddle) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+  // ── Skin: shadow trail (drawn behind paddle) ──────────────────
   if(_equipped==='shadow'&&s.shadowTrail.length>1){
     s.shadowTrail.forEach((tr,idx)=>{
       const pct=(idx+1)/s.shadowTrail.length;
@@ -2084,7 +2084,7 @@ function draw(){
   }
   ctx.shadowBlur=0;
 
-  // 笏笏 Skin aura effects (paddle glow, drawn over paddle) 笏笏笏笏笏笏笏
+  // ── Skin aura effects (paddle glow, drawn over paddle) ───────
   const _noFx=!isStun&&!isLa&&!isWi&&!isTi&&!isCa;
   if(_equipped==='gold'&&_noFx){
     // Pulsing halo ring
@@ -2154,7 +2154,7 @@ function draw(){
     ctx.strokeStyle=`rgba(77,166,255,${0.1+Math.sin(now*0.005)*0.04})`; ctx.lineWidth=1;
     ctx.beginPath(); ctx.roundRect(s.paddle.x-1,PY-1,PW+2,PH+2,7); ctx.stroke();
   }
-  // 笏笏 Ambient screen effects (subtle overlay over full canvas) 笏
+  // ── Ambient screen effects (subtle overlay over full canvas) ─
   if(_equipped==='boss'){
     const va=0.08+Math.sin(now*0.003)*0.04;
     const vg=ctx.createRadialGradient(W/2,H/2,H*0.25,W/2,H/2,H*0.82);
@@ -2197,11 +2197,11 @@ function draw(){
     sg.addColorStop(0,'rgba(0,0,0,0)'); sg.addColorStop(1,`rgba(30,0,60,${sa})`);
     ctx.fillStyle=sg; ctx.fillRect(0,0,W,H);
   }
-  // 笏笏 Skin particles 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+  // ── Skin particles ──────────────────────────────────────────────
   s.skinParts.forEach(p=>{
     ctx.save();
     if(p.type==='puff'||p.type==='mist'||p.type==='wisp'){
-      // Soft volumetric blobs 窶・no glow (avoids GPU cost on large radii)
+      // Soft volumetric blobs — no glow (avoids GPU cost on large radii)
       ctx.globalAlpha=p.life*0.3;
       ctx.fillStyle=p.col;
       ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
@@ -2241,7 +2241,7 @@ function draw(){
       ctx.closePath(); ctx.fill();
       ctx.restore(); ctx.shadowBlur=0;
     } else {
-      // spark / ember 窶・circle with glow
+      // spark / ember – circle with glow
       ctx.globalAlpha=p.life;
       ctx.shadowColor=p.col; ctx.shadowBlur=9;
       ctx.fillStyle=p.col;
@@ -2253,7 +2253,7 @@ function draw(){
 
   // Balls
   const isSl=s.fx.SLOW&&s.fx.SLOW>now;
-  // Ball trail 窶・skin-specific length/opacity/size
+  // Ball trail – skin-specific length/opacity/size
   if(s.ballTrail.length){
     const trCol=isLa?'#bf5af2':isCa?'#ff9f0a':isSl?'#30d158':_sc.glow;
     const trAlpha=_equipped==='shadow'?0.52:_equipped==='galaxy'?0.42:_equipped==='ice'?0.36:0.28;
@@ -2356,7 +2356,7 @@ function draw(){
     ctx.fillStyle=`rgba(${bm},${0.6*progress*Math.random()})`;
     ctx.beginPath();ctx.ellipse(beam.x,PY,bw*1.5,10,0,0,Math.PI*2);ctx.fill();
 
-    // 笏笏 Skin-specific hyper extras 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+    // ── Skin-specific hyper extras ─────────────────────────────
     if(_equipped==='shadow'){
       ctx.save();
       [[-18,0.12],[-9,0.20],[9,0.20],[18,0.12]].forEach(([off,a])=>{
@@ -2467,7 +2467,7 @@ function draw(){
   ctx.fillText('HYPER',gaugeX-54,gaugeY+7);
   ctx.textAlign='right';
   ctx.fillStyle=full?'#ffd60a':'#555';
-  ctx.fillText(full?'X / 3ﾃ裕AP':'',gaugeX+gaugeW+52,gaugeY+7);
+  ctx.fillText(full?'X / 3×TAP':'',gaugeX+gaugeW+52,gaugeY+7);
 
 
   const active=Object.entries(s.fx).filter(([,v])=>v&&v>now);
@@ -2491,10 +2491,10 @@ function draw(){
   const coinPulse=s.coinCount>0&&Math.floor(performance.now()/400)%2===0;
   ctx.fillStyle=coinPulse?'#ffe566':'#ffd60a';
   ctx.shadowColor='#ffd60a';ctx.shadowBlur=coinPulse?6:0;
-  ctx.fillText(`ｪ・{_wallet}`,W*0.72,H-7);
+  ctx.fillText(`🪙${_wallet}`,W*0.72,H-7);
   ctx.shadowBlur=0;
   ctx.fillStyle='#ff2d55';ctx.textAlign='right';
-  ctx.fillText('笶､・・.repeat(Math.max(s.lives,0)),W-6,H-7);
+  ctx.fillText('❤️'.repeat(Math.max(s.lives,0)),W-6,H-7);
 
   // Phase overlays
   ctx.textAlign='center';
@@ -2502,15 +2502,15 @@ function draw(){
     ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(0,0,W,H);
     ctx.fillStyle='#fff';ctx.font='bold 32px Courier New';ctx.fillText('ARKANOID',W/2,75);
     ctx.font='11px Courier New';
-    [['竊費ｸ・Breit','#4da6ff'],['世 Langsam','#30d158'],['笞｡ Multiball','#ffd60a'],
-     ['笶､・・+Leben','#ff2d55'],['鉢 Laser  (Z / Doppeltap)','#bf5af2'],
-     ['ｧｲ Catch 窶・klebt, Tippen=Abschuss','#ff9f0a'],['坎 Break 窶・Wand ﾃｶffnet sich','#30d158'],
-     ['筮・Silber: Mehrfachtreffer','#aaa'],['泯 Gold: unzerstﾃｶrbar','#b8860b'],
-     ['太 Gegner ab Lv 2','#ff6b82'],
-     ['聞・・Crawler ab Lv 3 窶・frisst Blﾃｶcke!','#00e5ff'],
-     ['笞｡ HYPER: Gauge fﾃｼllen 竊・X / 3ﾃ裕ap = Laserstrahl!','#ffd60a'],
-     ['逐 Boss DOH ab Lv 13 窶・nur Gesicht trifft!','#bf5af2'],
-     ['腸 Mﾃｼnzen fangen fﾃｼr Bonuspunkte!','#ffd60a'],
+    [['↔️ Breit','#4da6ff'],['🐢 Langsam','#30d158'],['⚡ Multiball','#ffd60a'],
+     ['❤️ +Leben','#ff2d55'],['🔫 Laser  (Z / Doppeltap)','#bf5af2'],
+     ['🧲 Catch – klebt, Tippen=Abschuss','#ff9f0a'],['🚪 Break – Wand öffnet sich','#30d158'],
+     ['⬜ Silber: Mehrfachtreffer','#aaa'],['🟡 Gold: unzerstörbar','#b8860b'],
+     ['👾 Gegner ab Lv 2','#ff6b82'],
+     ['🕷️ Crawler ab Lv 3 – frisst Blöcke!','#00e5ff'],
+     ['⚡ HYPER: Gauge füllen → X / 3×Tap = Laserstrahl!','#ffd60a'],
+     ['💀 Boss DOH ab Lv 13 – nur Gesicht trifft!','#bf5af2'],
+     ['💰 Münzen fangen für Bonuspunkte!','#ffd60a'],
     ].forEach(([t,c],i)=>{ctx.fillStyle=c;ctx.fillText(t,W/2,112+i*20);});
     ctx.fillStyle='#4da6ff';ctx.font='15px Courier New';
     ctx.fillText('Tippen / SPACE zum Starten',W/2,H-30);
@@ -2519,21 +2519,21 @@ function draw(){
     ctx.beginPath();ctx.roundRect(sb.x,sb.y,sb.w,sb.h,8);ctx.fill();ctx.stroke();
     ctx.fillStyle='#ffd60a';ctx.font='bold 13px Courier New';ctx.textAlign='center';
     ctx.shadowColor='#ffd60a';ctx.shadowBlur=8;
-    ctx.fillText('寫 SKIN SHOP',W/2,sb.y+20);
+    ctx.fillText('🛍 SKIN SHOP',W/2,sb.y+20);
     ctx.shadowBlur=0;
     ctx.fillStyle='rgba(255,214,10,0.5)';ctx.font='10px Courier New';
-    ctx.fillText(`ｪ・${_wallet} Mﾃｼnzen`,W/2,sb.y+sb.h+14);
+    ctx.fillText(`🪙 ${_wallet} Münzen`,W/2,sb.y+sb.h+14);
   }
   if(s.phase==='dead'){
     if(s.deadCause==='boss'){
-      // 笏笏 Boss-bullet death screen 笏笏
+      // ── Boss-bullet death screen ──
       const t=performance.now();
       const pulse=0.55+Math.sin(t*0.004)*0.1;
       ctx.fillStyle=`rgba(60,0,0,${pulse})`;ctx.fillRect(0,0,W,H);
       const iconPulse=Math.sin(t*0.008)*0.4+0.6;
       ctx.font=`${Math.floor(36+iconPulse*6)}px Courier New`;
       ctx.fillStyle=`rgba(255,80,0,${iconPulse})`;
-      ctx.fillText('徴',W/2,H/2-52);
+      ctx.fillText('💥',W/2,H/2-52);
       ctx.shadowColor='#ff4400';ctx.shadowBlur=18;
       ctx.fillStyle='#ff5522';ctx.font='bold 22px Courier New';
       ctx.fillText('VON DOH ERSCHOSSEN!',W/2,H/2-12);
@@ -2545,7 +2545,7 @@ function draw(){
         ctx.fillText('Tippen zum Weiterspielen',W/2,H/2+44);
       }
     } else {
-      // 笏笏 Normal ball-lost screen 笏笏
+      // ── Normal ball-lost screen ──
       ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(0,H/2-48,W,96);
       ctx.fillStyle='#ff2d55';ctx.font='bold 24px Courier New';ctx.fillText('BALL VERLOREN!',W/2,H/2-8);
       ctx.fillStyle='#aaa';ctx.font='13px Courier New';ctx.fillText('Tippen zum Weiterspielen',W/2,H/2+26);
@@ -2553,22 +2553,22 @@ function draw(){
   }
   if(s.phase==='win_boss'){
     ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(0,0,W,H);
-    ctx.fillStyle='#bf5af2';ctx.font='bold 26px Courier New';ctx.fillText('笞 BOSS NAHT! 笞',W/2,H/2-40);
+    ctx.fillStyle='#bf5af2';ctx.font='bold 26px Courier New';ctx.fillText('⚠ BOSS NAHT! ⚠',W/2,H/2-40);
     ctx.fillStyle='#ff2d55';ctx.font='bold 20px Courier New';ctx.fillText('D O H',W/2,H/2);
     ctx.fillStyle='#aaa';ctx.font='13px Courier New';ctx.fillText('Tippen zum Kampf!',W/2,H/2+40);
   }
   if(s.phase==='bossdead'){
     ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(0,0,W,H);
-    ctx.fillStyle='#ffd60a';ctx.font='bold 28px Courier New';ctx.fillText('DOH BESIEGT! 醇',W/2,H/2-30);
+    ctx.fillStyle='#ffd60a';ctx.font='bold 28px Courier New';ctx.fillText('DOH BESIEGT! 🏆',W/2,H/2-30);
     ctx.fillStyle='#30d158';ctx.font='bold 15px Courier New';ctx.fillText(`+${s.lives*1000} Leben-Bonus!`,W/2,H/2+10);
-    ctx.fillStyle='#4da6ff';ctx.font='13px Courier New';ctx.fillText('Tippen fﾃｼr nﾃ､chstes Level',W/2,H/2+45);
+    ctx.fillStyle='#4da6ff';ctx.font='13px Courier New';ctx.fillText('Tippen für nächstes Level',W/2,H/2+45);
   }
   if(s.phase==='win'){
     ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(0,H/2-62,W,124);
-    ctx.fillStyle='#30d158';ctx.font='bold 22px Courier New';ctx.fillText('LEVEL GESCHAFFT! 脂',W/2,H/2-22);
+    ctx.fillStyle='#30d158';ctx.font='bold 22px Courier New';ctx.fillText('LEVEL GESCHAFFT! 🎉',W/2,H/2-22);
     ctx.fillStyle='#ffd60a';ctx.font='bold 14px Courier New';
-    ctx.fillText(`笶､・・x${s.lives} Bonus: +${s.lifeBonus||0} Punkte`,W/2,H/2+8);
-    ctx.fillStyle='#aaa';ctx.font='13px Courier New';ctx.fillText('Tippen fﾃｼr Level '+(s.level+1),W/2,H/2+34);
+    ctx.fillText(`❤️ x${s.lives} Bonus: +${s.lifeBonus||0} Punkte`,W/2,H/2+8);
+    ctx.fillStyle='#aaa';ctx.font='13px Courier New';ctx.fillText('Tippen für Level '+(s.level+1),W/2,H/2+34);
   }
   if(s.phase==='gameover'){
     ctx.fillStyle='rgba(0,0,0,.82)';ctx.fillRect(0,0,W,H);
@@ -2577,18 +2577,18 @@ function draw(){
     ctx.fillStyle='#4da6ff';ctx.font='13px Courier New';ctx.fillText('Tippen zum Neustart',W/2,H/2+42);
   }
 
-  // 笏笏 Skin Shop overlay 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+  // ── Skin Shop overlay ──────────────────────────────────────
   if(s.phase==='shop'){
     const now2=performance.now();
     ctx.fillStyle='rgba(5,5,18,0.97)';ctx.fillRect(0,0,W,H);
     ctx.shadowColor='#ffd60a';ctx.shadowBlur=16;
     ctx.fillStyle='#ffd60a';ctx.font='bold 20px Courier New';ctx.textAlign='center';
-    ctx.fillText('寫  SKIN SHOP',W/2,30);
+    ctx.fillText('🛍  SKIN SHOP',W/2,30);
     ctx.shadowBlur=0;
     ctx.fillStyle='#888';ctx.font='11px Courier New';
     ctx.fillText(`Guthaben:`,W/2-20,52);
     ctx.fillStyle='#ffd60a';ctx.font='bold 11px Courier New';
-    ctx.fillText(`ｪ・${_wallet}`,W/2+34,52);
+    ctx.fillText(`🪙 ${_wallet}`,W/2+34,52);
     ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(8,60);ctx.lineTo(W-8,60);ctx.stroke();
     const cardW=234,cardH=78,colGap=6,rowGap=6;
@@ -2610,9 +2610,9 @@ function draw(){
       ctx.beginPath();ctx.roundRect(cx+8,cy+cardH/2-5,82,10,4);ctx.fill();ctx.shadowBlur=0;
       ctx.fillStyle=isEq?'#ffd60a':'#eee';ctx.font='bold 11px Courier New';ctx.textAlign='left';
       ctx.fillText(skin.name,cx+98,cy+22);
-      if(isEq){ctx.fillStyle='#ffd60a';ctx.font='9px Courier New';ctx.fillText('笨ｦ EQUIPPED',cx+98,cy+38);}
-      else if(isOwned){ctx.fillStyle='#30d158';ctx.font='9px Courier New';ctx.fillText('笨・OWNED',cx+98,cy+38);}
-      else{ctx.fillStyle=canBuy?'#ffd60a':'#555';ctx.font='10px Courier New';ctx.fillText(`ｪ・${skin.price}`,cx+98,cy+38);}
+      if(isEq){ctx.fillStyle='#ffd60a';ctx.font='9px Courier New';ctx.fillText('✦ EQUIPPED',cx+98,cy+38);}
+      else if(isOwned){ctx.fillStyle='#30d158';ctx.font='9px Courier New';ctx.fillText('✓ OWNED',cx+98,cy+38);}
+      else{ctx.fillStyle=canBuy?'#ffd60a':'#555';ctx.font='10px Courier New';ctx.fillText(`🪙 ${skin.price}`,cx+98,cy+38);}
       const btnX=cx+cardW-66,btnY=cy+cardH/2-15,btnW=58,btnH=30;
       if(isEq){
         ctx.fillStyle='rgba(255,214,10,0.18)';ctx.strokeStyle='#ffd60a';ctx.lineWidth=1.2;
@@ -2630,19 +2630,19 @@ function draw(){
       } else {
         ctx.fillStyle='rgba(80,80,80,0.15)';ctx.strokeStyle='#333';ctx.lineWidth=1;
         ctx.beginPath();ctx.roundRect(btnX,btnY,btnW,btnH,5);ctx.fill();ctx.stroke();
-        ctx.fillStyle='#444';ctx.font='bold 8px Courier New';ctx.textAlign='center';ctx.fillText(`ｪ・{skin.price}`,btnX+btnW/2,btnY+19);
+        ctx.fillStyle='#444';ctx.font='bold 8px Courier New';ctx.textAlign='center';ctx.fillText(`🪙${skin.price}`,btnX+btnW/2,btnY+19);
       }
     });
     ctx.fillStyle='rgba(255,255,255,0.06)';ctx.strokeStyle='rgba(255,255,255,0.22)';ctx.lineWidth=1;
     ctx.beginPath();ctx.roundRect(8,H-44,96,28,6);ctx.fill();ctx.stroke();
     ctx.fillStyle='#aaa';ctx.font='bold 11px Courier New';ctx.textAlign='center';
-    ctx.fillText('竊・ZURﾃ廚K',56,H-26);
+    ctx.fillText('← ZURÜCK',56,H-26);
   }
 
   ctx.restore();
 }
 
-// 笏笏 DEV PANEL 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── DEV PANEL ─────────────────────────────────────────────────
 const DEV_MAX_LEVEL = 60;
 function devJumpLevel(lv){
   lv=Math.max(1,lv);
@@ -2661,7 +2661,7 @@ let godMode=false;
 function devGodMode(){
   godMode=!godMode;
   document.querySelector('[onclick="devGodMode()"]').classList.toggle('active',godMode);
-  document.querySelector('[onclick="devGodMode()"]').textContent=godMode?'孱 God Mode ON':'孱 God Mode';
+  document.querySelector('[onclick="devGodMode()"]').textContent=godMode?'🛡 God Mode ON':'🛡 God Mode';
 }
 function devKillAll(){ st.bricks.forEach(b=>{ if(b.type!=='gold') b.alive=false; }); }
 function devSpawnBoss(){
@@ -2712,7 +2712,7 @@ function devHighlightActive(){
   for(let i=1;i<=DEV_MAX_LEVEL;i++){
     const btn=document.createElement('button');
     btn.className='devbtn lvlbtn'; btn.dataset.lv=i;
-    btn.textContent=i%13===0?i+'太':i;
+    btn.textContent=i%13===0?i+'👾':i;
     btn.onclick=(lv=>()=>devJumpLevel(lv))(i);
     grid.appendChild(btn);
   }
@@ -2725,7 +2725,7 @@ setInterval(()=>{
   devUpdateInfo(); devHighlightActive();
 },200);
 
-// 笏笏 Main loop (fixed timestep) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+// ── Main loop (fixed timestep) ────────────────────────────────
 let lastTs=null,accum=0;
 function loop(ts){
   if(lastTs===null){lastTs=ts;accum=0;}
@@ -2740,4 +2740,3 @@ requestAnimationFrame(loop);
 </script>
 </body>
 </html>
-
