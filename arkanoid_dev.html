@@ -600,6 +600,10 @@ function spawnBoss(){
     dying: false,            // death animation active
     dyingTimer: 0,           // counts down from 210
     dyingExpTimer: 8,        // frames until next explosion during death
+    recoilY: 0,              // hit recoil offset (animated upward nudge)
+    eyeGazeX: W/2,           // X target for eye-tracking
+    landingShock: 0,         // landing shockwave countdown (30→0)
+    chargeGlow: 0,           // shoot charge-up glow (0→1)
   };
 }
 
@@ -1026,7 +1030,7 @@ function tick(){
       const dx=ball.x-faceX, dy=ball.y-faceY;
       const dist=Math.hypot(dx,dy);
       if(dist<faceR+BR){
-        boss.hp--; boss.hitFlash=8; boss.hitCooldown=30;
+        boss.hp--; boss.hitFlash=8; boss.hitCooldown=30; boss.recoilY=-12;
         addHyper(s,8); s.score+=100; SFX.bossHit();
         spawnFX(ball.x,ball.y,'#ff2d55',10);
         if(Math.random()<0.3) spawnCoin(boss.x+(Math.random()-0.5)*50,boss.y+30,30,'gold');
@@ -1302,7 +1306,7 @@ function tick(){
       const ease=1-Math.pow(1-b.entryProgress,3);
       b.y=-140+230*ease;
       if(b.entryProgress>=1){
-        b.entering=false; b.y=90;
+        b.entering=false; b.y=90; b.landingShock=30;
         spawnFX(b.x,b.y+20,'#ff2d55',28);
         SFX.bossRoar();
       }
@@ -1328,6 +1332,17 @@ function tick(){
 
     if(b.hitFlash>0) b.hitFlash--;
     if(b.hitCooldown>0) b.hitCooldown--;
+    // Recoil decay
+    if(b.recoilY!==0){b.recoilY*=0.80;if(Math.abs(b.recoilY)<0.3)b.recoilY=0;}
+    // Eye gaze tracks nearest ball
+    if(s.balls.length>0){const tb=s.balls.reduce((a,c)=>Math.abs(c.x-b.x)<Math.abs(a.x-b.x)?c:a);b.eyeGazeX+=(tb.x-b.eyeGazeX)*0.06;}
+    // Landing shockwave countdown
+    if(b.landingShock>0) b.landingShock--;
+    // Charge-up glow: build before shot, reset after
+    if(!b.enrageMode&&!b.transforming){
+      const shotCycle=b.burstMode?190:240;
+      b.chargeGlow=Math.max(0,(shotCycle-b.shootTimer-8)/22);
+    } else b.chargeGlow=0;
 
     // ─ Transformation animation: hold still while cocoon opens ─
     if(b.transforming){
@@ -1416,7 +1431,7 @@ function tick(){
       const beam=s.hyperBeam;
       if(b.x+b.w/2>beam.x-32&&b.x-b.w/2<beam.x+32){
         if(beam.timer%6===0){
-          b.hp=Math.max(0,b.hp-1); b.hitFlash=8; b.hitCooldown=6;
+          b.hp=Math.max(0,b.hp-1); b.hitFlash=8; b.hitCooldown=6; b.recoilY=-6;
           addHyper(s,3); s.score+=50; SFX.bossHit();
           spawnFX(b.x+(Math.random()-0.5)*b.w,b.y,'#ff0',6);
           if(b.hp<=0&&b.alive&&!b.dying){
@@ -1435,7 +1450,7 @@ function tick(){
       if(b.hitCooldown>0) break;
       const faceX=b.x,faceY=b.y-b.h/2+20,faceR=36;
       if(Math.hypot(l.x-faceX,l.y-faceY)<faceR+8){
-        b.hp=Math.max(0,b.hp-1); b.hitFlash=8;
+        b.hp=Math.max(0,b.hp-1); b.hitFlash=8; b.recoilY=-9;
         addHyper(s,5); s.score+=50; SFX.bossHit();
         spawnFX(l.x,l.y,'#bf5af2',6);
         s.lasers.splice(i,1);
@@ -1659,6 +1674,8 @@ function draw(){
       ctx.translate((Math.random()-0.5)*sa,(Math.random()-0.5)*sa*0.4);
       ctx.globalAlpha=Math.max(0,1-Math.pow(Math.max(0,prog-0.6)/0.4,1.5));
     }
+    // Hit recoil nudge
+    if(b.recoilY!==0) ctx.translate(0,b.recoilY);
 
     if(b.transforming){
       const tp=b.transformProgress;
@@ -1795,9 +1812,26 @@ function draw(){
       const cg=ctx.createRadialGradient(bx,by,0,bx,by,cr+4);
       cg.addColorStop(0,'#fff'); cg.addColorStop(0.35,'#ff2d55'); cg.addColorStop(1,'rgba(255,45,85,0)');
       ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(bx,by,cr+4,0,Math.PI*2); ctx.fill();
+      // Orbiting energy orbs (6, rotating around hex)
+      for(let i=0;i<6;i++){
+        const oa=b.phase*1.8+(i/6)*Math.PI*2;
+        const orR=R+22+Math.sin(b.phase*3+i)*4;
+        const ox=bx+Math.cos(oa)*orR, oy=by+Math.sin(oa)*orR;
+        const pulse2=0.6+0.4*Math.sin(b.phase*4+i*1.1);
+        const og=ctx.createRadialGradient(ox,oy,0,ox,oy,7);
+        og.addColorStop(0,'rgba(255,255,255,0.9)');
+        og.addColorStop(0.35,`rgba(255,45,85,${pulse2})`);
+        og.addColorStop(1,'rgba(255,45,85,0)');
+        ctx.fillStyle=og; ctx.shadowColor='#ff2d55'; ctx.shadowBlur=16*pulse2;
+        ctx.beginPath(); ctx.arc(ox,oy,5,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle=`rgba(255,45,85,${0.18+pulse2*0.15})`; ctx.lineWidth=1;
+        const va=(i/6)*Math.PI*2-Math.PI/2;
+        ctx.beginPath(); ctx.moveTo(bx+Math.cos(va)*R,by+Math.sin(va)*R); ctx.lineTo(ox,oy); ctx.stroke();
+      }
+      ctx.shadowBlur=0;
     } else {
       // ─── MUSHROOM ───
-      const breath=Math.sin(b.phase*1.5)*2; // gentle breathing bob
+      const breath=Math.sin(b.phase*(b.burstMode?2.5:1.5))*(b.burstMode?4:2); // breathing bob, faster+deeper in burst
       const capColor=b.burstMode?'#ff7720':'#dd2200';
       const capHi=b.burstMode?'#ffb060':'#ff5522';
 
@@ -1889,8 +1923,9 @@ function draw(){
       }
       ctx.shadowBlur=0; ctx.lineCap='butt';
 
-      // ── Eyes — oval Makibao style ──
+      // ── Eyes — oval Makibao style, with ball-tracking gaze ──
       [[bx-14,b.eyeL],[bx+14,b.eyeR]].forEach(([ex,eye])=>{
+        const gazeOff=Math.max(-4,Math.min(4,(b.eyeGazeX-ex)*0.09));
         ctx.fillStyle='#060200';
         ctx.beginPath(); ctx.ellipse(ex,eyeY,15,eye.open*9+1,0,0,Math.PI*2); ctx.fill();
         ctx.fillStyle='#f8f3ea';
@@ -1898,11 +1933,11 @@ function draw(){
         if(eye.open>0.2){
           const ic=b.burstMode?'#cc4400':'#8b008b';
           ctx.fillStyle=ic; ctx.shadowColor=ic; ctx.shadowBlur=9;
-          ctx.beginPath(); ctx.ellipse(ex,eyeY,8.5,eye.open*6,0,0,Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(ex+gazeOff,eyeY,8.5,eye.open*6,0,0,Math.PI*2); ctx.fill();
           ctx.shadowBlur=0;
-          ctx.fillStyle='#030100'; ctx.beginPath(); ctx.ellipse(ex,eyeY,5,eye.open*4,0,0,Math.PI*2); ctx.fill();
-          ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.beginPath(); ctx.ellipse(ex-4,eyeY-2.5,4,2,0,0,Math.PI*2); ctx.fill();
-          ctx.fillStyle='rgba(255,255,255,0.38)'; ctx.beginPath(); ctx.ellipse(ex+3,eyeY+2,1.8,1,0,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='#030100'; ctx.beginPath(); ctx.ellipse(ex+gazeOff,eyeY,5,eye.open*4,0,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.beginPath(); ctx.ellipse(ex+gazeOff-4,eyeY-2.5,4,2,0,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='rgba(255,255,255,0.38)'; ctx.beginPath(); ctx.ellipse(ex+gazeOff+3,eyeY+2,1.8,1,0,0,Math.PI*2); ctx.fill();
         }
       });
 
@@ -1911,6 +1946,16 @@ function draw(){
         ctx.fillStyle='rgba(255,100,75,0.2)';
         ctx.beginPath(); ctx.ellipse(bx-25,eyeY+5,9,5,0,0,Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.ellipse(bx+25,eyeY+5,9,5,0,0,Math.PI*2); ctx.fill();
+      }
+
+      // ── Shoot charge-up glow (telegraphs imminent shot) ──
+      if(b.chargeGlow>0.05){
+        const cg2=ctx.createRadialGradient(bx,by+b.h/2,2,bx,by+b.h/2,18*b.chargeGlow+4);
+        cg2.addColorStop(0,`rgba(255,160,60,${b.chargeGlow*0.9})`);
+        cg2.addColorStop(1,'rgba(255,80,0,0)');
+        ctx.fillStyle=cg2; ctx.shadowColor='#ff5500'; ctx.shadowBlur=22*b.chargeGlow;
+        ctx.beginPath(); ctx.arc(bx,by+b.h/2,18*b.chargeGlow+4,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0;
       }
 
       // ── Mouth / horse teeth ──
@@ -1986,6 +2031,36 @@ function draw(){
       }
     }
     ctx.restore();
+
+    // ── Landing shockwave ring ──
+    if(b.landingShock>0){
+      const lsp=1-b.landingShock/30;
+      const lsr=lsp*140, lsa=1-lsp;
+      ctx.strokeStyle=`rgba(255,45,85,${lsa*0.85})`; ctx.lineWidth=3+lsa*2;
+      ctx.shadowColor='#ff2d55'; ctx.shadowBlur=24*lsa;
+      ctx.beginPath(); ctx.ellipse(bx,by+b.h/2-10,lsr,lsr*0.3,0,0,Math.PI*2);
+      ctx.stroke(); ctx.shadowBlur=0;
+    }
+
+    // ── Burst/enrage screen vignette ──
+    if((b.burstMode||b.enrageMode)&&!b.dying&&!b.entering){
+      const vg=ctx.createRadialGradient(W/2,H/2,H*0.18,W/2,H/2,H*0.88);
+      vg.addColorStop(0,'rgba(0,0,0,0)');
+      vg.addColorStop(1,b.enrageMode?'rgba(180,0,0,0.18)':'rgba(180,60,0,0.12)');
+      ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
+    }
+
+    // ── Death shockwave ring (first 0.3 of death animation) ──
+    if(b.dying){
+      const dp=1-b.dyingTimer/210;
+      if(dp<0.35){
+        const dsr=dp/0.35*180, dsa=1-dp/0.35;
+        ctx.strokeStyle=`rgba(255,220,60,${dsa*0.8})`; ctx.lineWidth=5;
+        ctx.shadowColor='#ffd60a'; ctx.shadowBlur=30*dsa;
+        ctx.beginPath(); ctx.ellipse(bx,by,dsr,dsr*0.55,0,0,Math.PI*2);
+        ctx.stroke(); ctx.shadowBlur=0;
+      }
+    }
 
     // Screen flash: transform climax
     if(b.transforming&&b.transformProgress>0.90){
