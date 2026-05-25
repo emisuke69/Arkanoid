@@ -7,75 +7,14 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#05050f;display:flex;align-items:flex-start;justify-content:center;
-  min-height:100vh;touch-action:none;overflow-x:hidden;overflow-y:auto;gap:16px;padding:16px 0}
+  min-height:100vh;touch-action:none;overflow-x:hidden;overflow-y:auto;padding:16px 0}
 canvas{border-radius:10px;border:1px solid rgba(77,166,255,.2);
   box-shadow:0 0 30px rgba(77,166,255,.06);display:block}
-#devpanel{
-  display:flex;flex-direction:column;gap:8px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(77,166,255,.2);
-  border-radius:10px;padding:12px;min-width:160px;
-  font-family:'Courier New',monospace;color:#fff;
-  align-self:flex-start;margin-top:20px;
-}
-#devpanel h3{color:#ffd60a;font-size:12px;letter-spacing:2px;margin-bottom:4px;text-align:center}
-#devpanel .section{color:#4da6ff;font-size:10px;letter-spacing:1px;margin:6px 0 3px}
-.devbtn{
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);
-  color:#fff;font-family:'Courier New',monospace;font-size:11px;
-  padding:5px 8px;border-radius:5px;cursor:pointer;text-align:left;
-  transition:background .15s;width:100%;
-}
-.devbtn:hover{background:rgba(255,255,255,.15);border-color:#4da6ff}
-.devbtn.active{background:rgba(77,166,255,.2);border-color:#4da6ff;color:#4da6ff}
-.devbtn.warn{border-color:#ff9f0a;color:#ff9f0a}
-.devbtn.warn:hover{background:rgba(255,159,10,.15)}
-.devbtn.danger{border-color:#ff2d55;color:#ff2d55}
-.devbtn.danger:hover{background:rgba(255,45,85,.15)}
-#lvl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;max-height:150px;overflow-y:auto}
-.lvlbtn{padding:3px 2px;font-size:10px;text-align:center}
-#lv-custom{display:flex;gap:4px;margin-top:4px}
-#lv-input{width:52px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);
-  color:#fff;font-family:'Courier New',monospace;font-size:11px;padding:4px 6px;border-radius:4px}
-#dev-info{font-size:10px;color:#555;border-top:1px solid rgba(255,255,255,.08);
-  padding-top:6px;margin-top:4px;line-height:1.6}
-#dev-info span{color:#aaa}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 
-<div id="devpanel">
-  <h3>⚙ DEV PANEL</h3>
-  <div class="section">JUMP TO LEVEL</div>
-  <div id="lvl-grid"></div>
-  <div id="lv-custom">
-    <input id="lv-input" type="number" min="1" placeholder="Lv#">
-    <button class="devbtn" style="flex:1" onclick="devJumpLevel(parseInt(document.getElementById('lv-input').value)||1)">Go →</button>
-  </div>
-  <div class="section">POWER-UPS</div>
-  <button class="devbtn warn" onclick="devGivePU('WIDE')">↔️ Wide</button>
-  <button class="devbtn warn" onclick="devGivePU('LASER')">🔫 Laser</button>
-  <button class="devbtn warn" onclick="devGivePU('CATCH')">🧲 Catch</button>
-  <button class="devbtn warn" onclick="devGivePU('MULTI')">⚡ Multiball</button>
-  <button class="devbtn warn" onclick="devGivePU('SLOW')">🐢 Slow</button>
-  <button class="devbtn warn" onclick="devGivePU('LIFE')">❤️ +Life</button>
-  <button class="devbtn warn" onclick="devGivePU('BREAK')">🚪 Break</button>
-  <div class="section">CHEATS</div>
-  <button class="devbtn" onclick="devFillHyper()">⚡ Fill Hyper</button>
-  <button class="devbtn" onclick="devUnlockAllSkins()">🎨 All Skins + 999🪙</button>
-  <button class="devbtn" onclick="devGodMode()">🛡 God Mode</button>
-  <button class="devbtn danger" onclick="devKillAll()">💀 Kill All Bricks</button>
-  <button class="devbtn danger" onclick="devSpawnBoss()">👾 Spawn Boss Now</button>
-  <button class="devbtn danger" onclick="devBurstBoss()">⚡ Boss Burst Mode</button>
-  <button class="devbtn danger" onclick="devEnrageBoss()">🔥 Boss Enrage Mode</button>
-  <button class="devbtn danger" onclick="devKillBoss()">☠ Kill Boss</button>
-  <div id="dev-info">
-    LVL <span id="di-lv">-</span> &nbsp; LIVES <span id="di-lv2">-</span><br>
-    BALLS <span id="di-b">-</span> &nbsp; HYPER <span id="di-h">-</span><br>
-    PHASE <span id="di-ph">-</span>
-  </div>
-</div>
 <script>
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
 
@@ -2642,88 +2581,6 @@ function draw(){
   ctx.restore();
 }
 
-// ── DEV PANEL ─────────────────────────────────────────────────
-const DEV_MAX_LEVEL = 60;
-function devJumpLevel(lv){
-  lv=Math.max(1,lv);
-  const px=st.paddle.x,sc=st.score;
-  st=initState(lv); st.paddle.x=px; st.score=sc; st.lives=5;
-  if(lv%13===0){ st.bricks=[]; st.boss=spawnBoss(); SFX.bossRoar(); }
-  st.phase='idle'; devUpdateInfo(); devHighlightActive();
-}
-function devGivePU(type){ applyPU(type); devUpdateInfo(); }
-function devFillHyper(){ st.hyper=st.hyperMax; devUpdateInfo(); }
-function devUnlockAllSkins(){
-  _saveOwned(SKIN_IDS.slice());
-  _saveWallet(999);
-}
-let godMode=false;
-function devGodMode(){
-  godMode=!godMode;
-  document.querySelector('[onclick="devGodMode()"]').classList.toggle('active',godMode);
-  document.querySelector('[onclick="devGodMode()"]').textContent=godMode?'🛡 God Mode ON':'🛡 God Mode';
-}
-function devKillAll(){ st.bricks.forEach(b=>{ if(b.type!=='gold') b.alive=false; }); }
-function devSpawnBoss(){
-  const lv=Math.max(st.level,13),px=st.paddle.x,sc=st.score;
-  st=initState(lv); st.paddle.x=px; st.score=sc; st.lives=5;
-  st.bricks=[]; st.boss=spawnBoss(); st.phase='idle';
-  SFX.bossRoar(); devUpdateInfo(); devHighlightActive();
-}
-function devBurstBoss(){
-  const b=st.boss;
-  if(b&&b.alive&&!b.entering&&!b.dying){
-    b.burstMode=true;
-    b.hp=Math.min(b.hp,Math.floor(b.maxHp*0.5)-1);
-    SFX.bossRoar();
-  }
-}
-function devEnrageBoss(){
-  const b=st.boss;
-  if(b&&b.alive&&!b.entering&&!b.dying&&!b.transforming&&!b.enrageMode){
-    b.burstMode=true;
-    b.transforming=true;
-    b.transformProgress=0;
-    b.hp=Math.min(b.hp,Math.floor(b.maxHp*0.25)-1);
-    SFX.bossRoar();
-  }
-}
-function devKillBoss(){
-  const b=st.boss;
-  if(b&&b.alive&&!b.dying){
-    b.alive=false; b.dying=true; b.dyingTimer=210; b.dyingExpTimer=8;
-    SFX.bossDie();
-  }
-}
-function devUpdateInfo(){
-  document.getElementById('di-lv').textContent=st.level;
-  document.getElementById('di-lv2').textContent=st.lives;
-  document.getElementById('di-b').textContent=st.balls.length;
-  document.getElementById('di-h').textContent=Math.round(st.hyper)+'/'+st.hyperMax;
-  document.getElementById('di-ph').textContent=st.phase;
-}
-function devHighlightActive(){
-  document.querySelectorAll('.lvlbtn').forEach(btn=>{
-    btn.classList.toggle('active',parseInt(btn.dataset.lv)===st.level);
-  });
-}
-(function(){
-  const grid=document.getElementById('lvl-grid');
-  for(let i=1;i<=DEV_MAX_LEVEL;i++){
-    const btn=document.createElement('button');
-    btn.className='devbtn lvlbtn'; btn.dataset.lv=i;
-    btn.textContent=i%13===0?i+'👾':i;
-    btn.onclick=(lv=>()=>devJumpLevel(lv))(i);
-    grid.appendChild(btn);
-  }
-})();
-setInterval(()=>{
-  if(godMode&&st.phase==='playing'){
-    if(st.balls.length===0) st.balls=[makeBall(st.level,st.paddle.x+st.paddle.w/2,PY-BR-2)];
-    if(st.lives<1) st.lives=1;
-  }
-  devUpdateInfo(); devHighlightActive();
-},200);
 
 // ── Main loop (fixed timestep) ────────────────────────────────
 let lastTs=null,accum=0;
