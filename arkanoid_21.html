@@ -587,7 +587,6 @@ function spawnBoss(){
     recoilY: 0,              // hit recoil offset (animated upward nudge)
     eyeGazeX: W/2,           // X target for eye-tracking
     landingShock: 0,         // landing shockwave countdown (30→0)
-    chargeGlow: 0,           // shoot charge-up glow (0→1)
   };
 }
 
@@ -1297,12 +1296,6 @@ function tick(){
     if(s.balls.length>0){const tb=s.balls.reduce((a,c)=>Math.abs(c.x-b.x)<Math.abs(a.x-b.x)?c:a);b.eyeGazeX+=(tb.x-b.eyeGazeX)*0.06;}
     // Landing shockwave countdown
     if(b.landingShock>0) b.landingShock--;
-    // Charge-up glow: build before shot, reset after
-    if(!b.enrageMode&&!b.transforming){
-      const shotCycle=b.burstMode?190:240;
-      b.chargeGlow=Math.max(0,(shotCycle-b.shootTimer-8)/22);
-    } else b.chargeGlow=0;
-
     // ─ Transformation animation: hold still while cocoon opens ─
     if(b.transforming){
       b.transformProgress=Math.min(b.transformProgress+0.008,1);
@@ -1903,16 +1896,6 @@ function draw(){
         ctx.fillStyle='rgba(255,100,75,0.2)';
         ctx.beginPath(); ctx.ellipse(bx-25,eyeY+5,9,5,0,0,Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.ellipse(bx+25,eyeY+5,9,5,0,0,Math.PI*2); ctx.fill();
-      }
-
-      // ── Shoot charge-up glow (telegraphs imminent shot) ──
-      if(b.chargeGlow>0.05){
-        const cg2=ctx.createRadialGradient(bx,by+b.h/2,2,bx,by+b.h/2,18*b.chargeGlow+4);
-        cg2.addColorStop(0,`rgba(255,160,60,${b.chargeGlow*0.9})`);
-        cg2.addColorStop(1,'rgba(255,80,0,0)');
-        ctx.fillStyle=cg2; ctx.shadowColor='#ff5500'; ctx.shadowBlur=22*b.chargeGlow;
-        ctx.beginPath(); ctx.arc(bx,by+b.h/2,18*b.chargeGlow+4,0,Math.PI*2); ctx.fill();
-        ctx.shadowBlur=0;
       }
 
       // ── Mouth / horse teeth ──
