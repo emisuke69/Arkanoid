@@ -64,7 +64,7 @@ const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
 
 // ── Constants ─────────────────────────────────────────────────
 const W=480,H=520,PH=12,PY=478,BR=7;
-const BASE_SPEED=7.5,SPD_INC=0.35,MAX_SPD=9.5,MAX_SPD_2=12.0,SLOW_MULT=0.55;
+const BASE_SPEED=6.0,SPD_INC=0.28,MAX_SPD=7.5,MAX_SPD_2=9.5,SLOW_MULT=0.55;
 const STEP=1000/60;
 
 // ── Responsive canvas ─────────────────────────────────────────
@@ -125,6 +125,11 @@ if(!SKINS[_equipped])_equipped='classic';
 function _saveWallet(n){_wallet=Math.max(0,n);localStorage.setItem('ark_wallet',_wallet);}
 function _saveOwned(a){_owned=a;localStorage.setItem('ark_skins',JSON.stringify(a));}
 function _saveEquipped(id){_equipped=id;localStorage.setItem('ark_equipped',id);}
+let _sfxVol=parseFloat(localStorage.getItem('ark_sfx_vol')||'0.8');
+let _sfxMute=localStorage.getItem('ark_sfx_mute')==='1';
+let MASTER_GAIN=null;
+function _applySoundVol(){if(MASTER_GAIN)MASTER_GAIN.gain.setValueAtTime(_sfxMute?0:_sfxVol,AC.currentTime);}
+function _saveSoundSettings(){localStorage.setItem('ark_sfx_vol',_sfxVol);localStorage.setItem('ark_sfx_mute',_sfxMute?'1':'0');}
 function handleShopClick(x,y){
   // Back button
   if(x>=8&&x<=104&&y>=H-44&&y<=H-16){st.phase='idle';return;}
@@ -149,6 +154,7 @@ const N=(c,p=null)=>({t:'n',c,p});
 const S=(p=null)=>({t:'s',p});
 const G=()=>({t:'g'});
 const _=null;
+const P=(c)=>({t:'p',c});
 
 const LAYOUTS=[
   // Lv1 – gentle intro: 3 full rows, no silver (30 bricks)
@@ -268,107 +274,106 @@ const LAYOUTS=[
     [N(0),N(1),N(2),S(),S('MULTI'),S('LIFE'),S(),N(3),N(4),N(5)],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv14: dense return (post-boss I)
-  [
-    [N(0),N(1),N(2),N(3),N(4),N(5),N(0),N(1),N(2),N(3)],
-    [N(4),S(),N(5),N(0),N(1),N(2),N(3),S(),N(4),N(5)],
-    [N(0),N(1),S('WIDE'),N(2),N(3),N(4),N(5),S('LASER'),N(0),N(1)],
-    [N(2),S(),N(3),N(4),N(5),N(0),N(1),S(),N(2),N(3)],
-    [N(4),N(5),N(0),S('MULTI'),N(1),N(2),S('LIFE'),N(3),N(4),N(5)],
-    [_,_,_,_,_,_,_,_,_,_],
-  ],
-  // Lv15: gold frame
-  [
-    [G(),G(),G(),G(),G(),G(),G(),G(),G(),G()],
-    [G(),N(1),N(2),N(3),S('WIDE'),S('CATCH'),N(3),N(2),N(1),G()],
-    [G(),N(4),S(),N(5),N(0),N(0),N(5),S('LASER'),N(4),G()],
-    [G(),N(1),N(2),S('LIFE'),N(3),N(3),S('MULTI'),N(2),N(1),G()],
-    [G(),N(4),N(5),S('SLOW'),N(0),N(0),S('CATCH'),N(5),N(4),G()],
-    [_,_,_,_,_,_,_,_,_,_],
-  ],
-  // Lv16: pyramid – gold peak, expands to dense base
-  [
-    [_,_,_,_,G(),G(),_,_,_,_],
-    [_,_,_,N(0),N(1),N(2),N(3),_,_,_],
-    [_,_,N(4),N(5),S('WIDE'),S('LASER'),N(0),N(1),_,_],
-    [_,N(2),N(3),N(4),N(5),N(0),N(1),N(2),N(3),_],
-    [N(4),N(5),N(0),S(),N(1,'MULTI'),N(2,'LIFE'),S(),N(3),N(4),N(5)],
-    [_,_,_,_,_,_,_,_,_,_],
-  ],
-  // Lv17: three silver pillars
-  [
-    [N(0),N(1),S(),N(2),N(3),N(4),S(),N(5),N(0),N(1)],
-    [N(2),N(3),S(),N(4),N(5),N(0),S(),N(1),N(2),N(3)],
-    [N(4),N(5),S('LASER'),N(0),N(1),N(2),S('WIDE'),N(3),N(4),N(5)],
-    [N(0),N(1),S(),N(2),N(3),N(4),S(),N(5),N(0),N(1)],
-    [N(0),N(1),S('LIFE'),N(2),N(3),N(4),S('MULTI'),N(5),N(0),N(1)],
-    [_,_,_,_,_,_,_,_,_,_],
-  ],
-  // Lv18: concentric diamonds
-  [
-    [_,_,_,_,N(5),N(5),_,_,_,_],
-    [_,_,_,N(4),S('WIDE'),S(),N(4),_,_,_],
-    [_,_,N(3),S(),N(2),N(2),S(),N(3),_,_],
-    [_,N(2),S('LASER'),N(1),N(0),N(0),N(1),S('CATCH'),N(2),_],
-    [N(1),S(),N(0),S('MULTI'),N(2),N(3),S('LIFE'),N(0),S(),N(1)],
-    [_,_,_,_,_,_,_,_,_,_],
-  ],
-  // Lv19: full scatter
-  [
-    [N(0),N(1),N(2),N(3),N(4),N(5),N(0),N(1),N(2),N(3)],
-    [S(),N(4),N(5),S(),N(0),N(1),S(),N(2),N(3),S()],
-    [N(4),N(5),S('WIDE'),N(0),N(1),N(2),S('LASER'),N(3),N(4),N(5)],
-    [S(),N(0),N(1),S(),N(2),N(3),S('LIFE'),N(4),N(5),S()],
-    [N(0),S(),N(1),N(2),S('MULTI'),S('CATCH'),N(3),N(4),S(),N(5)],
-    [_,_,_,_,_,_,_,_,_,_],
-  ],
-  // Lv20: Z-banner – wide diagonal steps
+  // Lv14: "Wormhole Gate" — cyan portals pierce the full gold wall (1 pair)
   [
     [N(0),N(1),N(2),N(3),N(4,'WIDE'),N(5),N(0),N(1),N(2),N(3)],
-    [_,_,_,_,N(4),N(5),N(0),N(1),N(2),N(3)],
-    [_,_,N(4),N(5),S('LIFE'),S('LASER'),N(0),N(1),_,_],
-    [N(2),N(3),N(4),N(5),N(0),N(1),_,_,_,_],
-    [N(2),N(3),N(4),N(5),N(0),N(1,'MULTI'),N(2),N(3),N(4,'CATCH'),N(5)],
-    [_,_,_,_,_,_,_,_,_,_],
-  ],
-  // Lv21: silver cross – full outer rows, hollow inner columns
-  [
-    [N(0),N(1),N(2),N(3),S('WIDE'),S(),N(4),N(5),N(0),N(1)],
-    [N(2),N(3),_,S('LASER'),N(4),N(5),S(),_,N(0),N(1)],
-    [S(),S(),S(),S(),S('LIFE'),S('MULTI'),S(),S(),S(),S()],
-    [N(2),N(3),_,S('CATCH'),N(4),N(5),S('SLOW'),_,N(0),N(1)],
-    [N(2),N(3),N(4),N(5),S(),S(),N(0),N(1),N(2),N(3)],
-    [_,_,_,_,_,_,_,_,_,_],
-  ],
-  // Lv22: linked diamonds – two overlapping diamonds joined at centre
-  [
-    [_,N(0),N(1),_,_,_,N(3),N(4),_,_],
-    [N(2),N(3),N(4,'WIDE'),N(2),_,N(5),N(0),N(1,'CATCH'),N(5),_],
-    [N(5),N(0),N(1),N(5),S('LASER'),N(2),N(3),N(4),N(2),N(3)],
-    [N(4),N(5),N(0,'LIFE'),N(4),_,N(1),N(2),N(3,'MULTI'),N(1),_],
-    [_,N(5),N(0),_,_,_,N(4),N(5),_,_],
-    [_,_,_,_,_,_,_,_,_,_],
-  ],
-  // Lv23: wave
-  [
-    [N(0),_,N(1),_,N(2),_,N(3),_,N(4),_],
-    [N(5),N(0),N(1),N(2),N(3),N(4),N(5),N(0),N(1),N(2)],
-    [_,N(3),S('LASER'),N(4),S('WIDE'),N(5),S('LIFE'),N(0),S('MULTI'),_],
+    [N(4),S(),N(5),N(0),N(1),N(2),N(3),S('LASER'),N(4),N(5)],
+    [P(0),G(),G(),G(),G(),G(),G(),G(),G(),P(0)],
+    [N(5),N(0),S('MULTI'),N(1),N(2),N(3),N(4),S('LIFE'),N(5),N(0)],
     [N(1),N(2),N(3),N(4),N(5),N(0),N(1),N(2),N(3),N(4)],
-    [_,N(5),_,N(0),_,N(1),_,N(2),_,N(3)],
     [_,_,_,_,_,_,_,_,_,_],
   ],
-  // Lv24: the wall – maximum density
+  // Lv15: "Framed" — gold border; orange portal pair tunnels through col 4
   [
-    [S(),N(0),S(),N(1),S(),N(2),S(),N(3),S(),N(4)],
-    [N(5),S(),N(0),S(),N(1),S(),N(2),S(),N(3),S()],
-    [S('WIDE'),N(4),S(),N(5),S('LASER'),N(0),S('LIFE'),N(1),S('CATCH'),N(2)],
-    [N(3),S(),N(4),S(),N(5),S(),N(0),S(),N(1),S()],
-    [S(),N(2),S('MULTI'),N(3),S(),N(4),S('SLOW'),N(5),S(),N(0)],
+    [G(),G(),G(),G(),G(),G(),G(),G(),G(),G()],
+    [G(),N(1),N(2),N(3),P(1),N(4),N(3),N(2),N(1),G()],
+    [G(),N(4),S('WIDE'),N(5),N(0),N(0),S('CATCH'),N(5),N(4),G()],
+    [G(),N(1),N(2),S('LASER'),N(3),N(3),S('MULTI'),N(2),N(1),G()],
+    [G(),N(4),N(5),S('LIFE'),P(1),N(0),S('SLOW'),N(5),N(4),G()],
+    [_,_,_,_,_,_,_,_,_,_],
+  ],
+  // Lv16: "Double Warp" — cyan horizontal + orange vertical; gold bands block direct paths
+  [
+    [N(0),N(1),N(2),N(3),P(1),N(5),N(0),N(1),N(2),N(3)],
+    [N(4),S('WIDE'),N(5),G(),G(),G(),G(),N(0),S('LASER'),N(1)],
+    [P(0),N(2),N(3),N(4),N(5),N(0),N(1),N(2),N(3),P(0)],
+    [N(4),S(),N(5),G(),G(),G(),G(),N(0),S('MULTI'),N(1)],
+    [N(2),N(3),N(4),N(5),P(1),N(1),N(2),N(3),N(4),N(5)],
+    [_,_,_,_,_,_,_,_,_,_],
+  ],
+  // Lv17: "Pillar Bypass" — cyan at col 2, orange at col 7; skip the gold pillar zones
+  [
+    [N(0),N(1),N(2),N(3),N(4,'WIDE'),N(5),N(0),N(1),N(2),N(3)],
+    [N(4),N(5),P(0),N(0),S('LASER'),S('CATCH'),N(1),P(1),N(2),N(3)],
+    [N(4),G(),G(),N(5),N(0),N(1),N(2),G(),G(),N(3)],
+    [N(4),G(),G(),N(5),N(0),N(1),N(2),G(),G(),N(3)],
+    [N(4),N(5),P(0),N(0),S('MULTI'),S('LIFE'),N(1),P(1),N(2),N(3)],
+    [_,_,_,_,_,_,_,_,_,_],
+  ],
+  // Lv18: "Concentric Rifts" — 2 portal pairs woven into the diamond rings
+  [
+    [_,_,_,_,N(5),N(5),_,_,_,_],
+    [_,_,_,P(1),S('WIDE'),S(),N(4),_,_,_],
+    [_,_,N(3),S(),N(2),N(2),S(),N(3),_,_],
+    [_,P(0),S('LASER'),N(1),N(0),N(0),N(1),S('CATCH'),P(0),_],
+    [N(1),S(),N(0),P(1),N(2),N(3),S('LIFE'),N(0),S(),N(1)],
+    [_,_,_,_,_,_,_,_,_,_],
+  ],
+  // Lv19: "Scattered Rifts" — 3 portal pairs hidden in the dense field
+  [
+    [P(0),N(1),N(2),N(3),N(4),N(5),N(0),N(1),N(2),P(1)],
+    [S(),N(4),N(5),S(),N(0),N(1),S(),N(2),N(3),S()],
+    [N(4),N(5),S('WIDE'),N(0),P(2),N(2),S('LASER'),N(3),N(4),N(5)],
+    [S(),N(0),N(1),S(),N(2),P(2),S('LIFE'),N(4),N(5),S()],
+    [P(0),S(),N(1),N(2),S('MULTI'),S('CATCH'),N(3),N(4),S(),P(1)],
+    [_,_,_,_,_,_,_,_,_,_],
+  ],
+  // Lv20: "Z-Rift" — Z-banner shape with 3 portal pairs at the bends
+  [
+    [P(0),N(1),N(2),N(3),N(4,'WIDE'),N(5),N(0),N(1),N(2),P(1)],
+    [_,_,_,_,N(4),N(5),N(0),N(1),N(2),N(3)],
+    [_,_,P(2),N(5),S('LIFE'),S('LASER'),N(0),P(2),_,_],
+    [N(2),N(3),N(4),N(5),N(0),N(1),_,_,_,_],
+    [P(0),N(3),N(4),N(5),N(0),N(1,'MULTI'),N(2),N(3),N(4,'CATCH'),P(1)],
+    [_,_,_,_,_,_,_,_,_,_],
+  ],
+  // Lv21: "Rifted Cross" — silver cross structure with 3 portal pairs
+  [
+    [P(0),N(1),N(2),N(3),S('WIDE'),S(),N(4),N(5),N(0),P(1)],
+    [N(2),N(3),_,S('LASER'),N(4),N(5),S(),_,N(0),N(1)],
+    [S(),S(),P(2),S(),S('LIFE'),S('MULTI'),S(),P(2),S(),S()],
+    [N(2),N(3),_,S('CATCH'),N(4),N(5),S('SLOW'),_,N(0),N(1)],
+    [P(0),N(3),N(4),N(5),S(),S(),N(0),N(1),N(2),P(1)],
+    [_,_,_,_,_,_,_,_,_,_],
+  ],
+  // Lv22: "Twin Rifts" — linked diamonds with portals at the outer corners
+  [
+    [P(0),N(0),N(1),_,_,_,N(3),N(4),_,P(1)],
+    [N(2),N(3),N(4,'WIDE'),N(2),_,N(5),N(0),N(1,'CATCH'),N(5),_],
+    [N(5),P(2),N(1),N(5),S('LASER'),N(2),N(3),N(4),P(2),N(3)],
+    [N(4),N(5),N(0,'LIFE'),N(4),_,N(1),N(2),N(3,'MULTI'),N(1),_],
+    [_,P(0),N(0),_,_,_,N(4),N(5),_,P(1)],
+    [_,_,_,_,_,_,_,_,_,_],
+  ],
+  // Lv23: "Waved Vortex" — wave pattern with 3 portal pairs at peaks and troughs
+  [
+    [P(0),_,N(1),_,N(2),_,N(3),_,N(4),P(1)],
+    [N(5),N(0),N(1),N(2),N(3),N(4),N(5),N(0),N(1),N(2)],
+    [_,P(2),S('LASER'),N(4),S('WIDE'),N(5),S('LIFE'),N(0),P(2),_],
+    [N(1),N(2),N(3),N(4),N(5),N(0),N(1),N(2),N(3),N(4)],
+    [_,P(0),_,N(0),_,N(1),_,N(2),_,P(1)],
+    [_,_,_,_,_,_,_,_,_,_],
+  ],
+  // Lv24: "The Portal Wall" — maximum density; 3 portal pairs are the only breaks
+  [
+    [S(),P(0),S(),N(1),S(),N(2),S(),N(3),P(1),S()],
+    [N(5),S(),P(2),S(),N(1),S(),N(2),S(),N(3),S()],
+    [S('WIDE'),N(4),S(),N(5),S('LASER'),P(2),S('LIFE'),N(1),S('CATCH'),N(2)],
+    [N(3),S(),N(4),P(0),N(5),S(),N(0),S(),N(1),S()],
+    [S(),N(2),S('MULTI'),N(3),S(),N(4),S('SLOW'),N(5),P(1),N(0)],
     [_,_,_,_,_,_,_,_,_,_],
   ],
 ];
-
 // ── Brick factory ─────────────────────────────────────────────
 function makeBricks(lv){
   const layout=LAYOUTS[(lv-1)%LAYOUTS.length];
@@ -381,8 +386,9 @@ function makeBricks(lv){
       let type,color,pts,maxHits;
       if(cell.t==='g'){type='gold';  color=['#b8860b','#ffe566'];pts=0; maxHits=9999;}
       else if(cell.t==='s'){type='silver';color=['#999','#ddd']; pts=50;maxHits=silverHits;}
+      else if(cell.t==='p'){const PC=[['#00e5ff','#80f4ff'],['#ff9f0a','#ffd480'],['#bf5af2','#d48aff']];type='portal';color=PC[cell.c%3];pts=0;maxHits=9999;}
       else{type='normal';color=COLORS[((cell.c||0)+6)%6];pts=(6-r)*10+10;maxHits=1;}
-      bricks.push({x,y,w,h,type,color,pts,maxHits,hits:0,alive:true,pu:cell.p||null});
+      bricks.push({x,y,w,h,type,color,pts,maxHits,hits:0,alive:true,pu:cell.p||null,portalColor:cell.t==='p'?cell.c%3:-1});
     });
   });
   return bricks;
@@ -401,7 +407,7 @@ function spawnEnemy(lv){
 }
 // Spawn a crawler anchored to the bottom of a random alive brick
 function spawnCrawler(bricks,lv){
-  const alive=bricks.filter(b=>b.alive&&b.type!=='gold');
+  const alive=bricks.filter(b=>b.alive&&b.type!=='gold'&&b.type!=='portal');
   if(!alive.length)return null;
   const anchor=alive[Math.floor(Math.random()*alive.length)];
   return{
@@ -420,7 +426,12 @@ function spawnCrawler(bricks,lv){
 // ── Audio engine (Web Audio API, procedural) ──────────────────
 let AC=null;
 function getAC(){
-  if(!AC) AC=new(window.AudioContext||window.webkitAudioContext)();
+  if(!AC){
+    AC=new(window.AudioContext||window.webkitAudioContext)();
+    MASTER_GAIN=AC.createGain();
+    MASTER_GAIN.gain.setValueAtTime(_sfxMute?0:_sfxVol,AC.currentTime);
+    MASTER_GAIN.connect(AC.destination);
+  }
   if(AC.state==='suspended') AC.resume();
   return AC;
 }
@@ -431,7 +442,7 @@ function playTone({type='square',freq=440,freq2=null,vol=0.18,attack=0.005,decay
     gain.gain.setValueAtTime(0,t);
     gain.gain.linearRampToValueAtTime(vol,t+attack);
     gain.gain.exponentialRampToValueAtTime(0.0001,t+attack+decay);
-    gain.connect(ac.destination);
+    gain.connect(MASTER_GAIN||ac.destination);
     const osc=ac.createOscillator();
     osc.type=type; osc.frequency.setValueAtTime(freq,t);
     osc.detune.setValueAtTime(detune,t);
@@ -444,7 +455,7 @@ function playTone({type='square',freq=440,freq2=null,vol=0.18,attack=0.005,decay
       const src=ac.createBufferSource(), ng=ac.createGain();
       ng.gain.setValueAtTime(vol*.6,t);
       ng.gain.exponentialRampToValueAtTime(0.0001,t+decay*.8);
-      src.buffer=buf; src.connect(ng); ng.connect(ac.destination); src.start(t);
+      src.buffer=buf; src.connect(ng); ng.connect(MASTER_GAIN||ac.destination); src.start(t);
     }
   }catch(e){}
 }
@@ -479,13 +490,14 @@ const SFX={
       const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.4;
       const src=ac.createBufferSource(),ng=ac.createGain();
       ng.gain.setValueAtTime(0.3,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+0.6);
-      src.buffer=buf; src.connect(ng); ng.connect(ac.destination); src.start(t);
+      src.buffer=buf; src.connect(ng); ng.connect(MASTER_GAIN||ac.destination); src.start(t);
     }catch(e){}
   },
   stun:()=>playTone({type:'sawtooth',freq:180,freq2:60,vol:0.3,attack:0.005,decay:0.4,dur:0.45,noise:0.3}),
   bossHit:()=>playTone({type:'square',freq:1400,freq2:700,vol:0.22,attack:0.001,decay:0.1,dur:0.12}),
   stunShot:()=>playTone({type:'sawtooth',freq:300,freq2:80,vol:0.18,attack:0.01,decay:0.35,dur:0.42}),
   stunHit:()=>playTone({type:'square',freq:880,freq2:110,vol:0.28,attack:0.001,decay:0.22,dur:0.28}),
+  portal:()=>{playTone({type:'sine',freq:440,freq2:1760,vol:0.2,attack:0.004,decay:0.18,dur:0.22});setTimeout(()=>playTone({type:'sine',freq:880,freq2:2200,vol:0.12,attack:0.002,decay:0.14,dur:0.18}),60);},
   coin:()=>playTone({type:'sine',freq:1046,freq2:1568,vol:0.16,attack:0.002,decay:0.12,dur:0.14}),
   bossRoar:()=>{
     try{
@@ -498,7 +510,7 @@ const SFX={
       const d2=buf.getChannelData(0);for(let i=0;i<d2.length;i++)d2[i]=(Math.random()*2-1)*0.5;
       const src=ac.createBufferSource(),ng=ac.createGain();
       ng.gain.setValueAtTime(0.35,t);ng.gain.exponentialRampToValueAtTime(0.0001,t+1.0);
-      src.buffer=buf;src.connect(ng);ng.connect(ac.destination);src.start(t);
+      src.buffer=buf;src.connect(ng);ng.connect(MASTER_GAIN||ac.destination);src.start(t);
     }catch(e){}
   },
   bossDie:()=>{
@@ -513,7 +525,7 @@ const SFX={
         const d2=buf.getChannelData(0);for(let j=0;j<d2.length;j++)d2[j]=(Math.random()*2-1)*0.5;
         const src=ac.createBufferSource(),ng=ac.createGain();
         ng.gain.setValueAtTime(0.3,t+dt);ng.gain.exponentialRampToValueAtTime(0.0001,t+dt+0.4);
-        src.buffer=buf;src.connect(ng);ng.connect(ac.destination);src.start(t+dt);
+        src.buffer=buf;src.connect(ng);ng.connect(MASTER_GAIN||ac.destination);src.start(t+dt);
       });
     }catch(e){}
   },
@@ -557,7 +569,7 @@ function clampSpd(b,lv,slow){
 }
 function makeBall(lv,x,y){
   const spd=ballSpeed(lv),a=-Math.PI/2+(Math.random()-.5)*.7;
-  return{x:x??240,y:y??(PY-BR-2),vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,caught:false,catchOff:0};
+  return{x:x??240,y:y??(PY-BR-2),vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,caught:false,catchOff:0,portalCooldown:0};
 }
 
 // ── Boss: DOH ─────────────────────────────────────────────────
@@ -628,7 +640,7 @@ function applyPU(type){
     s.balls.forEach(b=>{
       const sp=ballSpeed(s.level);
       [.8,-.8].forEach(off=>{const a=Math.atan2(b.vy,b.vx)+off;
-        extras.push({x:b.x,y:b.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,caught:false,catchOff:0});});
+        extras.push({x:b.x,y:b.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,caught:false,catchOff:0,portalCooldown:0});});
     });
     s.balls=[...s.balls,...extras].slice(0,6);
   }
@@ -680,6 +692,9 @@ function fireHyper(){
   s.hyper=0; SFX.hyperBeam();
 }
 let paused=false;
+let settingsOpen=false,_sliderDrag=false;
+const SFX_BTN={x:W-22,y:14,r:12};
+const SFX_PANEL={x:W/2-100,y:H/2-82,w:200,h:164};
 const btnPause=document.getElementById('btn-pause');
 function togglePause(){
   if(st.phase!=='playing')return;
@@ -691,6 +706,14 @@ btnPause.addEventListener('click',togglePause);
 
 let lastTap=0,tapCount=0;
 function canvasClick(cx,cy){
+  const bd=SFX_BTN,dx=cx-bd.x,dy=cy-bd.y;
+  if(dx*dx+dy*dy<=(bd.r+4)*(bd.r+4)){
+    settingsOpen=!settingsOpen;
+    if(settingsOpen&&st.phase==='playing'&&!paused)paused=true;
+    else if(!settingsOpen&&paused)paused=false;
+    return;
+  }
+  if(settingsOpen){handleSFXPanelClick(cx,cy);return;}
   if(paused){togglePause();return;}
   if(st.phase==='shop'){handleShopClick(cx,cy);return;}
   if(st.phase==='idle'){
@@ -754,6 +777,7 @@ document.addEventListener('fullscreenchange',()=>{
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
+    if(settingsOpen){settingsOpen=false;if(paused&&st.phase==='playing')paused=false;return;}
     if(st.phase==='shop'){st.phase='idle';return;}
     if(paused){togglePause();return;}
   }
@@ -764,6 +788,40 @@ document.addEventListener('keydown',e=>{
   if(e.key==='z'||e.key==='Z') shootLaser();
   if(e.key==='x'||e.key==='X') fireHyper();
 });
+
+function handleSFXPanelClick(cx,cy){
+  const p=SFX_PANEL,barX=p.x+24,barY=p.y+68,barW=p.w-48;
+  if(cx>=barX-4&&cx<=barX+barW+4&&cy>=barY-10&&cy<=barY+18){
+    _sfxVol=Math.max(0,Math.min(1,(cx-barX)/barW));
+    _sfxMute=false;_applySoundVol();_saveSoundSettings();return;
+  }
+  const muteY=p.y+112;
+  if(cx>=p.x+24&&cx<=p.x+p.w-24&&cy>=muteY-14&&cy<=muteY+14){
+    _sfxMute=!_sfxMute;_applySoundVol();_saveSoundSettings();return;
+  }
+  if(cx<p.x||cx>p.x+p.w||cy<p.y||cy>p.y+p.h){
+    settingsOpen=false;if(paused&&st.phase==='playing')paused=false;
+  }
+}
+canvas.addEventListener('pointerdown',e=>{
+  if(!settingsOpen)return;
+  const r=canvas.getBoundingClientRect(),p=SFX_PANEL;
+  const cx=(e.clientX-r.left)/SC(),cy=(e.clientY-r.top)/SC();
+  const barX=p.x+24,barY=p.y+68,barW=p.w-48;
+  if(cx>=barX-4&&cx<=barX+barW+4&&cy>=barY-10&&cy<=barY+18){
+    _sliderDrag=true;
+    _sfxVol=Math.max(0,Math.min(1,(cx-barX)/barW));
+    _sfxMute=false;_applySoundVol();_saveSoundSettings();
+  }
+});
+canvas.addEventListener('pointermove',e=>{
+  if(!_sliderDrag)return;
+  const r=canvas.getBoundingClientRect(),p=SFX_PANEL;
+  const cx=(e.clientX-r.left)/SC(),barX=p.x+24,barW=p.w-48;
+  _sfxVol=Math.max(0,Math.min(1,(cx-barX)/barW));
+  _applySoundVol();_saveSoundSettings();
+});
+canvas.addEventListener('pointerup',()=>{_sliderDrag=false;});
 
 // ── Fixed-timestep tick ───────────────────────────────────────
 function tick(){
@@ -826,7 +884,7 @@ function tick(){
         const bw=W/10,bh=22,bp=3,top=52;
         let found=null;
         for(const bk of s.bricks){
-          if(!bk.alive||bk.type==='gold')continue;
+          if(!bk.alive||bk.type==='gold'||bk.type==='portal')continue;
           if(e.x>bk.x&&e.x<bk.x+bk.w&&Math.abs(e.y-(bk.y+bk.h))<4){found=bk;break;}
         }
         if(found){e.anchorBrick=found;e.y=found.y+found.h;}
@@ -986,6 +1044,10 @@ function tick(){
       for(const bk of s.bricks){
         if(!bk.alive)continue;
         if(x+BR>bk.x&&x-BR<bk.x+bk.w&&y+BR>bk.y&&y-BR<bk.y+bk.h){
+          if(bk.type==='portal'){
+            if(!b.portalCooldown){const pt=s.bricks.find(pb=>pb.alive&&pb.type==='portal'&&pb.portalColor===bk.portalColor&&pb!==bk);if(pt){x=pt.x+pt.w/2;y=pt.y+pt.h/2;b.portalCooldown=46;SFX.portal();spawnFX(pt.x+pt.w/2,pt.y+pt.h/2,bk.color[0],14);}}
+            brickHit=true;break;
+          }
           brickHit=true;
           bk.hits++;
           const ok=bk.hits>=bk.maxHits;
@@ -1029,6 +1091,7 @@ function tick(){
 
     } // end substeps
 
+    if(b.portalCooldown>0)b.portalCooldown--;
     if(y+BR>H+8)dead.push(idx);
     else{b.x=x;b.y=y;b.vx=vx;b.vy=vy;s.balls[idx]=b;}
   });
@@ -1192,6 +1255,7 @@ function tick(){
     const l=s.lasers[i];l.y+=l.vy;let hit=false;
     for(const bk of s.bricks){
       if(!bk.alive)continue;
+      if(bk.type==='portal')continue;
       if(l.x+l.w>bk.x&&l.x<bk.x+bk.w&&l.y<bk.y+bk.h&&l.y+l.h>bk.y){
         if(bk.type!=='gold'){bk.hits++;
           if(bk.hits>=bk.maxHits){bk.alive=false;s.score+=bk.pts;
@@ -1230,7 +1294,7 @@ function tick(){
     if(beam.timer%3===0){
       const bw=32; // beam half-width
       for(const bk of s.bricks){
-        if(!bk.alive||bk.type==='gold')continue;
+        if(!bk.alive||bk.type==='gold'||bk.type==='portal')continue;
         if(bk.x+bk.w>beam.x-bw&&bk.x<beam.x+bw){
           bk.hits=bk.maxHits; bk.alive=false; s.score+=bk.pts;
           addHyper(s,2);
@@ -1430,7 +1494,7 @@ function tick(){
   if(s.phase==='playing'){
     if(s.level%13===0){
       // Boss level: only win via bossdead (set by setTimeout after boss dies)
-    } else if(s.bricks.length>0&&s.bricks.every(b=>!b.alive||b.type==='gold')){
+    } else if(s.bricks.length>0&&s.bricks.every(b=>!b.alive||b.type==='gold'||b.type==='portal')){
       s.lifeBonus=s.lives*500;
       s.score+=s.lifeBonus;
       s.phase= s.level%13===12 ? 'win_boss' : 'win';
@@ -1498,13 +1562,19 @@ function draw(){
       const sg=ctx.createLinearGradient(b.x,b.y,b.x,b.y+b.h);
       sg.addColorStop(0,'#eaeaea');sg.addColorStop(0.5,`rgb(${br},${br},${br})`);sg.addColorStop(1,'#666');
       ctx.fillStyle=sg;ctx.shadowColor='#aaa';ctx.shadowBlur=4;
+    } else if(b.type==='portal'){
+      const pc=b.color[0],pulse=0.55+Math.sin(now*0.005+b.x*0.02)*0.45;
+      ctx.shadowColor=pc; ctx.shadowBlur=12+pulse*6;
+      const pg=ctx.createRadialGradient(b.x+b.w/2,b.y+b.h/2,2,b.x+b.w/2,b.y+b.h/2,b.w*0.55);
+      pg.addColorStop(0,'rgba(0,0,0,0.7)');pg.addColorStop(0.6,pc+'66');pg.addColorStop(1,pc+'bb');
+      ctx.fillStyle=pg;
     } else {
       const col=b.color||['#4da6ff','#a0d4ff'];
       const gg=ctx.createLinearGradient(b.x,b.y,b.x,b.y+b.h);
       gg.addColorStop(0,col[1]||col[0]);gg.addColorStop(0.55,col[0]);gg.addColorStop(1,'rgba(0,0,0,0.35)');
       ctx.fillStyle=gg;ctx.shadowBlur=0;
     }
-    ctx.beginPath();ctx.roundRect(b.x,b.y,b.w,b.h,4);ctx.fill();ctx.shadowBlur=0;
+    ctx.beginPath();ctx.roundRect(b.x,b.y,b.w,b.h,4);ctx.fill();ctx.shadowBlur=0;ctx.shadowColor='transparent';
     // 3D bevel: top-left highlight
     ctx.fillStyle='rgba(255,255,255,0.28)';
     ctx.beginPath();ctx.roundRect(b.x+2,b.y+2,b.w-4,4,2);ctx.fill();
@@ -1513,6 +1583,21 @@ function draw(){
     // Bottom-right shadow
     ctx.fillStyle='rgba(0,0,0,0.28)';
     ctx.beginPath();ctx.roundRect(b.x+2,b.y+b.h-4,b.w-4,3,2);ctx.fill();
+    // Portal: animated spinning rings
+    if(b.type==='portal'){
+      const cx=b.x+b.w/2,cy=b.y+b.h/2,t2=now*0.003+b.x*0.01;
+      const pulse=0.55+Math.sin(now*0.005+b.x*0.02)*0.45;
+      ctx.save();ctx.translate(cx,cy);
+      ctx.rotate(t2);ctx.strokeStyle=b.color[1];ctx.lineWidth=2;ctx.globalAlpha=0.85;
+      ctx.shadowColor=b.color[0];ctx.shadowBlur=8;
+      ctx.beginPath();ctx.ellipse(0,0,b.w*0.38,b.h*0.4,0,0,Math.PI*2);ctx.stroke();
+      ctx.rotate(-t2*2.2);ctx.strokeStyle=b.color[0];ctx.lineWidth=1.2;ctx.globalAlpha=0.5+pulse*0.3;
+      ctx.beginPath();ctx.ellipse(0,0,b.w*0.22,b.h*0.22,0,0,Math.PI*2);ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle='rgba(0,0,0,0.65)';ctx.beginPath();ctx.arc(cx,cy,3.5,0,Math.PI*2);ctx.fill();
+      ctx.shadowBlur=0;ctx.globalAlpha=1;
+    }
+
     // Gold: animated shimmer sweep
     if(b.type==='gold'){
       const shimP=((now*0.00045)+(b.x/480*0.6))%1;
@@ -2682,6 +2767,52 @@ function draw(){
     ctx.beginPath();ctx.roundRect(8,H-44,96,28,6);ctx.fill();ctx.stroke();
     ctx.fillStyle='#aaa';ctx.font='bold 11px Courier New';ctx.textAlign='center';
     ctx.fillText('← ZURÜCK',56,H-26);
+  }
+
+  // ── Sound settings button (always visible) ───────────────────
+  {
+    const {x,y,r}=SFX_BTN;
+    ctx.save();
+    ctx.shadowColor='#4da6ff';ctx.shadowBlur=settingsOpen?12:0;
+    ctx.fillStyle=settingsOpen?'rgba(77,166,255,0.22)':'rgba(255,255,255,0.07)';
+    ctx.strokeStyle=settingsOpen?'#4da6ff':'rgba(255,255,255,0.3)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.shadowBlur=0;ctx.font='13px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(_sfxMute?'🔇':'🔊',x,y);
+    ctx.textBaseline='alphabetic';ctx.restore();
+  }
+
+  // ── Sound settings overlay ────────────────────────────────────
+  if(settingsOpen){
+    const p=SFX_PANEL,cx2=p.x+p.w/2;
+    ctx.save();
+    ctx.fillStyle='rgba(4,6,24,0.95)';ctx.strokeStyle='rgba(77,166,255,0.45)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.roundRect(p.x,p.y,p.w,p.h,12);ctx.fill();ctx.stroke();
+    ctx.shadowColor='#4da6ff';ctx.shadowBlur=18;
+    ctx.fillStyle='#fff';ctx.font='bold 14px Courier New';ctx.textAlign='center';
+    ctx.fillText('SOUND SETTINGS',cx2,p.y+24);ctx.shadowBlur=0;
+    const vol=_sfxMute?0:Math.round(_sfxVol*100);
+    ctx.fillStyle='#888';ctx.font='10px Courier New';ctx.textAlign='left';
+    ctx.fillText('VOLUME',p.x+24,p.y+52);
+    ctx.fillStyle='#ccc';ctx.textAlign='right';
+    ctx.fillText((_sfxMute?'MUTED':vol+'%'),p.x+p.w-24,p.y+52);
+    const bx=p.x+24,by=p.y+62,bw=p.w-48,bh=5;
+    ctx.fillStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.roundRect(bx,by,bw,bh,3);ctx.fill();
+    const fill=_sfxMute?0:_sfxVol;
+    ctx.fillStyle=_sfxMute?'#333':'#4da6ff';ctx.beginPath();ctx.roundRect(bx,by,bw*fill,bh,3);ctx.fill();
+    const hx=bx+bw*fill;
+    ctx.shadowColor='#4da6ff';ctx.shadowBlur=_sfxMute?0:8;
+    ctx.fillStyle=_sfxMute?'#555':'#fff';ctx.beginPath();ctx.arc(hx,by+bh/2,7,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+    const muteY=p.y+112,btnW=152,btnH=28;
+    ctx.fillStyle=_sfxMute?'rgba(255,45,85,0.18)':'rgba(48,209,88,0.14)';
+    ctx.strokeStyle=_sfxMute?'#ff2d55':'#30d158';ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.roundRect(cx2-btnW/2,muteY-btnH/2,btnW,btnH,6);ctx.fill();ctx.stroke();
+    ctx.fillStyle=_sfxMute?'#ff2d55':'#30d158';ctx.font='bold 11px Courier New';ctx.textAlign='center';
+    ctx.fillText(_sfxMute?'🔇  MUTED  — tap to unmute':'🔊  ON  — tap to mute',cx2,muteY+4);
+    ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='9px Courier New';
+    ctx.fillText('ESC or tap ⚙ to close',cx2,p.y+p.h-9);
+    ctx.restore();
   }
 
   ctx.restore();
