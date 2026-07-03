@@ -90,9 +90,11 @@ const STEP=1000/60;
 
 // ── Responsive canvas ─────────────────────────────────────────
 const MB_H=72,TOP_BAR_H=44;
+const _mbEl=()=>document.getElementById('mobile-bar');
+const _mobVisible=()=>window.getComputedStyle(_mbEl()).display!=='none';
 function resize(){
   const dpr=window.devicePixelRatio||1;
-  const isMob=window.matchMedia('(hover:none)and(pointer:coarse)').matches;
+  const isMob=_mobVisible();
   const mbH=isMob?MB_H:0,tbH=isMob?TOP_BAR_H:0;
   const r=Math.min((innerWidth-8)/480,(innerHeight-8-mbH-tbH)/520);
   const cssW=Math.floor(480*r),cssH=Math.floor(520*r);
@@ -783,8 +785,7 @@ document.addEventListener('touchend',e=>{
 },{passive:false});
 
 // Show mobile buttons + wire them up if touch is available
-if(('ontouchstart' in window||navigator.maxTouchPoints>0)&&window.matchMedia('(hover:none)').matches){
-  document.getElementById('mobile-bar').style.display='flex';
+if(_mobVisible()){
   document.getElementById('top-bar').style.display='flex';
   document.body.style.paddingBottom=MB_H+'px';
   document.body.style.paddingTop=TOP_BAR_H+'px';
