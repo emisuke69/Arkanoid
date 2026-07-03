@@ -60,11 +60,9 @@ canvas{border-radius:10px;border:1px solid rgba(77,166,255,.2);
 #tb-lives{color:#ff6b6b}
 #tb-level{color:#4da6ff}
 #tb-score{color:#ffd60a}
-@media(hover:none)and(pointer:coarse){
-  #mobile-bar{display:flex}
-  #top-bar{display:flex}
-  #btn-pause,#btn-fs{top:max(52px,calc(env(safe-area-inset-top,0px)+52px))}
-}
+body.mobile #mobile-bar{display:flex}
+body.mobile #top-bar{display:flex}
+body.mobile #btn-pause,body.mobile #btn-fs{top:max(52px,calc(env(safe-area-inset-top,0px)+52px))}
 </style>
 </head>
 <body>
@@ -90,11 +88,20 @@ const STEP=1000/60;
 
 // ── Responsive canvas ─────────────────────────────────────────
 const MB_H=72,TOP_BAR_H=44;
-const _mbEl=()=>document.getElementById('mobile-bar');
-const _mobVisible=()=>window.getComputedStyle(_mbEl()).display!=='none';
+// Robust mobile detection: needs touch AND a phone/tablet-sized screen.
+// (Avoids the hover/pointer media-query bugs some Android browsers have,
+//  and avoids false positives on touch-reporting desktop Chrome.)
+function detectMobile(){
+  const touch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+  const coarse=window.matchMedia('(pointer: coarse)').matches;
+  const shortSide=Math.min(window.screen.width,window.screen.height);
+  return touch&&(coarse||shortSide<820);
+}
+let IS_MOBILE=detectMobile();
+if(IS_MOBILE)document.body.classList.add('mobile');
 function resize(){
   const dpr=window.devicePixelRatio||1;
-  const isMob=_mobVisible();
+  const isMob=IS_MOBILE;
   const mbH=isMob?MB_H:0,tbH=isMob?TOP_BAR_H:0;
   const r=Math.min((innerWidth-8)/480,(innerHeight-8-mbH-tbH)/520);
   const cssW=Math.floor(480*r),cssH=Math.floor(520*r);
@@ -785,8 +792,7 @@ document.addEventListener('touchend',e=>{
 },{passive:false});
 
 // Show mobile buttons + wire them up if touch is available
-if(_mobVisible()){
-  document.getElementById('top-bar').style.display='flex';
+if(IS_MOBILE){
   document.body.style.paddingBottom=MB_H+'px';
   document.body.style.paddingTop=TOP_BAR_H+'px';
   resize();
