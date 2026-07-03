@@ -48,7 +48,7 @@ canvas{border-radius:10px;border:1px solid rgba(77,166,255,.2);
 #btn-fs{right:8px}
 #btn-pause{right:50px}
 #btn-pause.paused{color:#ffd60a;border-color:rgba(255,214,10,.5);background:rgba(20,15,0,.7)}
-@media(hover:none)and(pointer:coarse){#mobile-bar{display:flex}}
+@media(max-width:768px){#mobile-bar{display:flex}}
 </style>
 </head>
 <body>
@@ -69,11 +69,16 @@ const STEP=1000/60;
 
 // ── Responsive canvas ─────────────────────────────────────────
 const MB_H=72; // reserved px for fixed mobile bar
+// Single source of truth for "mobile layout": viewport width only.
+// (No hover/pointer/ontouchstart — those mis-fire on desktop Chrome and buggy Android.)
+const MQ_MOBILE=window.matchMedia('(max-width:768px)');
+const isMobileLayout=()=>MQ_MOBILE.matches;
 function resize(){
-  const mbH=document.getElementById('mobile-bar').style.display==='flex'?MB_H:0;
+  const mbH=isMobileLayout()?MB_H:0;
   const r=Math.min((innerWidth-8)/480,(innerHeight-8-mbH)/520);
   canvas.width=Math.floor(480*r); canvas.height=Math.floor(520*r);
   canvas.style.width=canvas.width+'px'; canvas.style.height=canvas.height+'px';
+  document.body.style.paddingBottom=mbH+'px';
 }
 resize(); window.addEventListener('resize',()=>{resize();});
 const SC=()=>canvas.width/480;
@@ -753,16 +758,12 @@ canvas.addEventListener('touchend',e=>{
   lastTap=now;
 },{passive:false});
 
-// Show mobile buttons + wire them up if touch is available
-if('ontouchstart' in window||navigator.maxTouchPoints>0){
-  document.getElementById('mobile-bar').style.display='flex';
-  document.body.style.paddingBottom=MB_H+'px';
-  resize();
-  ['touchstart','mousedown'].forEach(ev=>{
-    document.getElementById('btn-laser').addEventListener(ev,e=>{e.preventDefault();shootLaser();},{passive:false});
-    document.getElementById('btn-hyper').addEventListener(ev,e=>{e.preventDefault();fireHyper();},{passive:false});
-  });
-}
+// Wire up mobile buttons. They are shown only on narrow screens (CSS media query);
+// on PC they stay hidden and play is keyboard-driven (Z=laser, X=hyper).
+['touchstart','mousedown'].forEach(ev=>{
+  document.getElementById('btn-laser').addEventListener(ev,e=>{e.preventDefault();shootLaser();},{passive:false});
+  document.getElementById('btn-hyper').addEventListener(ev,e=>{e.preventDefault();fireHyper();},{passive:false});
+});
 
 // Fullscreen toggle
 function toggleFS(){
