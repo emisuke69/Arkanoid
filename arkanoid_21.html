@@ -783,7 +783,7 @@ document.addEventListener('touchend',e=>{
 },{passive:false});
 
 // Show mobile buttons + wire them up if touch is available
-if(window.matchMedia('(hover:none)and(pointer:coarse)').matches){
+if(('ontouchstart' in window||navigator.maxTouchPoints>0)&&window.matchMedia('(hover:none)').matches){
   document.getElementById('mobile-bar').style.display='flex';
   document.getElementById('top-bar').style.display='flex';
   document.body.style.paddingBottom=MB_H+'px';
