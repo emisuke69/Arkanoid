@@ -48,29 +48,10 @@ canvas{border-radius:10px;border:1px solid rgba(77,166,255,.2);
 #btn-fs{right:8px}
 #btn-pause{right:50px}
 #btn-pause.paused{color:#ffd60a;border-color:rgba(255,214,10,.5);background:rgba(20,15,0,.7)}
-#top-bar{
-  position:fixed;top:0;left:0;right:0;height:44px;
-  display:none;align-items:center;justify-content:space-between;
-  padding:0 16px;
-  background:rgba(5,5,15,0.92);
-  border-bottom:1px solid rgba(77,166,255,.18);
-  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-  color:#ccc;font:bold 13px 'Courier New',monospace;
-  z-index:20;letter-spacing:.5px}
-#tb-lives{color:#ff6b6b}
-#tb-level{color:#4da6ff}
-#tb-score{color:#ffd60a}
-body.mobile #mobile-bar{display:flex}
-body.mobile #top-bar{display:flex}
-body.mobile #btn-pause,body.mobile #btn-fs{top:max(52px,calc(env(safe-area-inset-top,0px)+52px))}
+@media(hover:none)and(pointer:coarse){#mobile-bar{display:flex}}
 </style>
 </head>
 <body>
-<div id="top-bar">
-  <span id="tb-lives"></span>
-  <span id="tb-level"></span>
-  <span id="tb-score"></span>
-</div>
 <canvas id="c"></canvas>
 <div id="mobile-bar">
   <button id="btn-laser">🔫 LASER</button>
@@ -87,33 +68,15 @@ const BASE_SPEED=6.0,SPD_INC=0.28,MAX_SPD=7.5,MAX_SPD_2=9.5,SLOW_MULT=0.55;
 const STEP=1000/60;
 
 // ── Responsive canvas ─────────────────────────────────────────
-const MB_H=72,TOP_BAR_H=44;
-// Robust mobile detection: needs touch AND a phone/tablet-sized screen.
-// (Avoids the hover/pointer media-query bugs some Android browsers have,
-//  and avoids false positives on touch-reporting desktop Chrome.)
-function detectMobile(){
-  const touch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
-  const coarse=window.matchMedia('(pointer: coarse)').matches;
-  const shortSide=Math.min(window.screen.width,window.screen.height);
-  return touch&&(coarse||shortSide<820);
-}
-let IS_MOBILE=detectMobile();
-if(IS_MOBILE)document.body.classList.add('mobile');
+const MB_H=72; // reserved px for fixed mobile bar
 function resize(){
-  const dpr=window.devicePixelRatio||1;
-  const isMob=IS_MOBILE;
-  const mbH=isMob?MB_H:0,tbH=isMob?TOP_BAR_H:0;
-  const r=Math.min((innerWidth-8)/480,(innerHeight-8-mbH-tbH)/520);
-  const cssW=Math.floor(480*r),cssH=Math.floor(520*r);
-  canvas.width=Math.floor(cssW*dpr); canvas.height=Math.floor(cssH*dpr);
-  canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px';
+  const mbH=document.getElementById('mobile-bar').style.display==='flex'?MB_H:0;
+  const r=Math.min((innerWidth-8)/480,(innerHeight-8-mbH)/520);
+  canvas.width=Math.floor(480*r); canvas.height=Math.floor(520*r);
+  canvas.style.width=canvas.width+'px'; canvas.style.height=canvas.height+'px';
 }
 resize(); window.addEventListener('resize',()=>{resize();});
 const SC=()=>canvas.width/480;
-const CSS_SC=()=>parseFloat(canvas.style.width)/480;
-const _tbLives=document.getElementById('tb-lives');
-const _tbLevel=document.getElementById('tb-level');
-const _tbScore=document.getElementById('tb-score');
 
 // ── Starfield (generated once, animated in draw) ──────────────
 const STARS=Array.from({length:70},()=>({
@@ -762,26 +725,25 @@ function canvasClick(cx,cy){
 }
 canvas.addEventListener('click',e=>{
   const r=canvas.getBoundingClientRect();
-  canvasClick((e.clientX-r.left)/CSS_SC(),(e.clientY-r.top)/CSS_SC());
+  canvasClick((e.clientX-r.left)/SC(),(e.clientY-r.top)/SC());
 });
-document.addEventListener('touchstart',e=>{
+canvas.addEventListener('touchstart',e=>{
   e.preventDefault();
-  const touch=e.touches[0],r=canvas.getBoundingClientRect();
-  const tx=(touch.clientX-r.left)/CSS_SC();
+  const r=canvas.getBoundingClientRect();
+  const tx=(e.touches[0].clientX-r.left)/SC(),ty=(e.touches[0].clientY-r.top)/SC();
   st.targetX=tx;
-  if(touch.clientY>=r.top&&touch.clientY<=r.bottom)
-    canvasClick(tx,(touch.clientY-r.top)/CSS_SC());
+  canvasClick(tx,ty);
 },{passive:false});
-document.addEventListener('touchmove',e=>{
+canvas.addEventListener('touchmove',e=>{
   e.preventDefault();
   const r=canvas.getBoundingClientRect();
-  st.targetX=(e.touches[0].clientX-r.left)/CSS_SC();
+  st.targetX=(e.touches[0].clientX-r.left)/SC();
 },{passive:false});
-document.addEventListener('mousemove',e=>{
+canvas.addEventListener('mousemove',e=>{
   const r=canvas.getBoundingClientRect();
-  st.targetX=(e.clientX-r.left)/CSS_SC();
+  st.targetX=(e.clientX-r.left)/SC();
 });
-document.addEventListener('touchend',e=>{
+canvas.addEventListener('touchend',e=>{
   const now=performance.now();
   if(now-lastTap<300){
     tapCount++;
@@ -792,9 +754,9 @@ document.addEventListener('touchend',e=>{
 },{passive:false});
 
 // Show mobile buttons + wire them up if touch is available
-if(IS_MOBILE){
+if('ontouchstart' in window||navigator.maxTouchPoints>0){
+  document.getElementById('mobile-bar').style.display='flex';
   document.body.style.paddingBottom=MB_H+'px';
-  document.body.style.paddingTop=TOP_BAR_H+'px';
   resize();
   ['touchstart','mousedown'].forEach(ev=>{
     document.getElementById('btn-laser').addEventListener(ev,e=>{e.preventDefault();shootLaser();},{passive:false});
@@ -844,7 +806,7 @@ function handleSFXPanelClick(cx,cy){
 canvas.addEventListener('pointerdown',e=>{
   if(!settingsOpen)return;
   const r=canvas.getBoundingClientRect(),p=SFX_PANEL;
-  const cx=(e.clientX-r.left)/CSS_SC(),cy=(e.clientY-r.top)/CSS_SC();
+  const cx=(e.clientX-r.left)/SC(),cy=(e.clientY-r.top)/SC();
   const barX=p.x+24,barY=p.y+68,barW=p.w-48;
   if(cx>=barX-4&&cx<=barX+barW+4&&cy>=barY-10&&cy<=barY+18){
     _sliderDrag=true;
@@ -855,7 +817,7 @@ canvas.addEventListener('pointerdown',e=>{
 canvas.addEventListener('pointermove',e=>{
   if(!_sliderDrag)return;
   const r=canvas.getBoundingClientRect(),p=SFX_PANEL;
-  const cx=(e.clientX-r.left)/CSS_SC(),barX=p.x+24,barW=p.w-48;
+  const cx=(e.clientX-r.left)/SC(),barX=p.x+24,barW=p.w-48;
   _sfxVol=Math.max(0,Math.min(1,(cx-barX)/barW));
   _applySoundVol();_saveSoundSettings();
 });
@@ -2851,12 +2813,6 @@ function draw(){
     ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='9px Courier New';
     ctx.fillText('ESC or tap ⚙ to close',cx2,p.y+p.h-9);
     ctx.restore();
-  }
-
-  if(_tbLives){
-    _tbLives.textContent='❤️ '+s.lives;
-    _tbLevel.textContent='LV '+s.level;
-    _tbScore.textContent=s.score.toLocaleString();
   }
 
   ctx.restore();

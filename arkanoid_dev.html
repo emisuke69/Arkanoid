@@ -86,15 +86,12 @@ const STEP=1000/60;
 
 // ── Responsive canvas ─────────────────────────────────────────
 function resize(){
-  const dpr=window.devicePixelRatio||1;
   const r=Math.min((innerWidth-8)/480,(innerHeight-8)/520);
-  const cssW=Math.floor(480*r),cssH=Math.floor(520*r);
-  canvas.width=Math.floor(cssW*dpr); canvas.height=Math.floor(cssH*dpr);
-  canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px';
+  canvas.width=Math.floor(480*r); canvas.height=Math.floor(520*r);
+  canvas.style.width=canvas.width+'px'; canvas.style.height=canvas.height+'px';
 }
 resize(); window.addEventListener('resize',()=>{resize();});
 const SC=()=>canvas.width/480;
-const CSS_SC=()=>parseFloat(canvas.style.width)/480;
 
 
 // ── Starfield (generated once, animated in draw) ──────────────
@@ -737,26 +734,25 @@ function canvasClick(cx,cy){
 }
 canvas.addEventListener('click',e=>{
   const r=canvas.getBoundingClientRect();
-  canvasClick((e.clientX-r.left)/CSS_SC(),(e.clientY-r.top)/CSS_SC());
+  canvasClick((e.clientX-r.left)/SC(),(e.clientY-r.top)/SC());
 });
-document.addEventListener('touchstart',e=>{
+canvas.addEventListener('touchstart',e=>{
   e.preventDefault();
-  const touch=e.touches[0],r=canvas.getBoundingClientRect();
-  const tx=(touch.clientX-r.left)/CSS_SC();
+  const r=canvas.getBoundingClientRect();
+  const tx=(e.touches[0].clientX-r.left)/SC(),ty=(e.touches[0].clientY-r.top)/SC();
   st.targetX=tx;
-  if(touch.clientY>=r.top&&touch.clientY<=r.bottom)
-    canvasClick(tx,(touch.clientY-r.top)/CSS_SC());
+  canvasClick(tx,ty);
 },{passive:false});
-document.addEventListener('touchmove',e=>{
+canvas.addEventListener('touchmove',e=>{
   e.preventDefault();
   const r=canvas.getBoundingClientRect();
-  st.targetX=(e.touches[0].clientX-r.left)/CSS_SC();
+  st.targetX=(e.touches[0].clientX-r.left)/SC();
 },{passive:false});
-document.addEventListener('mousemove',e=>{
+canvas.addEventListener('mousemove',e=>{
   const r=canvas.getBoundingClientRect();
-  st.targetX=(e.clientX-r.left)/CSS_SC();
+  st.targetX=(e.clientX-r.left)/SC();
 });
-document.addEventListener('touchend',e=>{
+canvas.addEventListener('touchend',e=>{
   const now=performance.now();
   if(now-lastTap<300){
     tapCount++;
@@ -796,7 +792,7 @@ function handleSFXPanelClick(cx,cy){
 canvas.addEventListener('pointerdown',e=>{
   if(!settingsOpen)return;
   const r=canvas.getBoundingClientRect(),p=SFX_PANEL;
-  const cx=(e.clientX-r.left)/CSS_SC(),cy=(e.clientY-r.top)/CSS_SC();
+  const cx=(e.clientX-r.left)/SC(),cy=(e.clientY-r.top)/SC();
   const barX=p.x+24,barY=p.y+68,barW=p.w-48;
   if(cx>=barX-4&&cx<=barX+barW+4&&cy>=barY-10&&cy<=barY+18){
     _sliderDrag=true;
@@ -807,7 +803,7 @@ canvas.addEventListener('pointerdown',e=>{
 canvas.addEventListener('pointermove',e=>{
   if(!_sliderDrag)return;
   const r=canvas.getBoundingClientRect(),p=SFX_PANEL;
-  const cx=(e.clientX-r.left)/CSS_SC(),barX=p.x+24,barW=p.w-48;
+  const cx=(e.clientX-r.left)/SC(),barX=p.x+24,barW=p.w-48;
   _sfxVol=Math.max(0,Math.min(1,(cx-barX)/barW));
   _applySoundVol();_saveSoundSettings();
 });
